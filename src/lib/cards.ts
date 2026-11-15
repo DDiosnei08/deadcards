@@ -1,6 +1,20 @@
 import type { Player, Team, TierBand, HistoryPoint } from "./types";
+import { strings, useT } from "./i18n";
 
 export const REGIONS = ["Europa", "América do Norte", "Brasil", "América do Sul", "Ásia", "Sem Time"];
+
+// Os valores de REGIONS e position são chaves salvas no banco; só o rótulo exibido muda por idioma.
+const LABELS = strings<Record<string, string>>({
+  pt: {},
+  en: { Europa: "Europe", "América do Norte": "North America", Brasil: "Brazil", "América do Sul": "South America", Ásia: "Asia", "Sem Time": "No Team", Suporte: "Support" },
+  es: { "América do Norte": "América del Norte", Brasil: "Brasil", "América do Sul": "América del Sur", Ásia: "Asia", "Sem Time": "Sin equipo", Suporte: "Soporte" },
+});
+
+/** Rótulo traduzido de uma região (ou posição) salva; valor desconhecido volta como veio. */
+export function useLabel(): (key: string) => string {
+  const t = useT(LABELS);
+  return (key) => t[key] ?? key;
+}
 
 export const DEFAULT_TIER_CONFIG: TierBand[] = [
   { key: "SS", min: 93, max: 99, bg: "#ff7f7f", text: "#18181b" },
