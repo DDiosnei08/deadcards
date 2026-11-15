@@ -11,3 +11,12 @@
 *, *::before, *::after {
   font-family: 'VALVE Oracle', ui-sans-serif, system-ui, sans-serif;
 }
+
+@layer base {
+  :where(button:not(:disabled):not(.card-hover-overlay)) {
+    transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  :where(button:not(:disabled):not(.card-hover-overlay)):active {
+    transform: scale(0.97);
+  }
+}

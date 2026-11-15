@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useState } from "react";
 import { DataProvider, useData } from "./lib/data";
 import { hexToRgba } from "./lib/cards";
@@ -20,9 +20,11 @@ const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
 
 export default function App() {
   return (
-    <DataProvider>
-      {location.pathname === "/login" ? <><Background /><Login /></> : <Shell />}
-    </DataProvider>
+    <MotionConfig reducedMotion="user">
+      <DataProvider>
+        {location.pathname === "/login" ? <><Background /><Login /></> : <Shell />}
+      </DataProvider>
+    </MotionConfig>
   );
 }
 
