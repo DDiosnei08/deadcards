@@ -19,12 +19,12 @@ export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
 }
 
 const S = strings({
-  pt: { signIn: "Entrar", signOut: "Sair", profile: "Meu perfil", account: "Menu da conta" },
-  en: { signIn: "Sign in", signOut: "Sign out", profile: "My profile", account: "Account menu" },
-  es: { signIn: "Ingresar", signOut: "Salir", profile: "Mi perfil", account: "Menú de la cuenta" },
+  pt: { signIn: "Entrar", signOut: "Sair", profile: "Meu perfil", collection: "Minha coleção", account: "Menu da conta" },
+  en: { signIn: "Sign in", signOut: "Sign out", profile: "My profile", collection: "My collection", account: "Account menu" },
+  es: { signIn: "Ingresar", signOut: "Salir", profile: "Mi perfil", collection: "Mi colección", account: "Menú de la cuenta" },
 });
 
-export function Account({ onProfile }: { onProfile: () => void }) {
+export function Account({ onProfile, onCollection }: { onProfile: () => void; onCollection: () => void }) {
   const t = useT(S);
   const { me } = useData();
   const [open, setOpen] = useState(false);
@@ -88,6 +88,14 @@ export function Account({ onProfile }: { onProfile: () => void }) {
               className="min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-sm text-zinc-300 hover:bg-zinc-800/70 hover:text-white focus-visible:outline-2 focus-visible:outline-zinc-100 active:bg-zinc-700"
             >
               {t.profile}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onCollection(); }}
+              className="min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-sm text-zinc-300 hover:bg-zinc-800/70 hover:text-white focus-visible:outline-2 focus-visible:outline-zinc-100 active:bg-zinc-700"
+            >
+              {t.collection}
             </button>
             <button
               type="button"

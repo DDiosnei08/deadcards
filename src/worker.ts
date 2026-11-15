@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { createAuth, currentUser } from "./auth";
-import { profileCard, profileLeaderboard, pruneProfileCache } from "./profile";
-import { PROFILE_CARD_PATH, PROFILE_LEADERBOARD_PATH } from "./lib/profile";
+import { profileCard, profileCollection, profileLeaderboard, pruneProfileCache } from "./profile";
+import { PROFILE_CARD_PATH, PROFILE_COLLECTION_PATH, PROFILE_LEADERBOARD_PATH } from "./lib/profile";
 
 export interface Env {
   DB: D1Database;
@@ -266,6 +266,7 @@ export default {
     if (url.pathname.startsWith("/api/auth/")) return createAuth(env, request).handler(request);
     if (url.pathname === "/api/me") return Response.json(await currentUser(env, request));
     if (url.pathname === PROFILE_CARD_PATH) return profileCard(env, request);
+    if (url.pathname === PROFILE_COLLECTION_PATH) return profileCollection(env, request);
     if (url.pathname === PROFILE_LEADERBOARD_PATH) return profileLeaderboard(env, request);
     if (url.pathname === "/api/codes" || url.pathname.startsWith("/api/codes/")) {
       if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);

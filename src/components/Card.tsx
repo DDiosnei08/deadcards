@@ -9,7 +9,7 @@ import { TeamLogo3D } from "./TeamLogo3D";
 import { TrendBadge } from "./TrendBadge";
 
 type Variant = "team" | "medium" | "editor";
-type ProfileFace = { name: string; hero: string; rank: string; rankTier?: number; stats: { label: string; value: string }[] };
+export type ProfileFace = { name: string; hero: string; rank: string; rankTier?: number; stats: { label: string; value: string }[] };
 type CardProps = { variant?: Variant; onOpen?: () => void } &
   ({ player: Player; profile?: never } | { profile: ProfileFace; player?: never });
 

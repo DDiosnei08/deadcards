@@ -16,6 +16,7 @@ import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } fr
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
 import { Profile } from "./views/Profile";
+import { MyCollection } from "./views/MyCollection";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -27,7 +28,7 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback" | "profile";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback" | "profile" | "myCollection";
 const TABS = ["teams", "tierlist", "collection", "redeem"] as const;
 
 const S = strings({
@@ -277,7 +278,7 @@ function Shell() {
             ))}
           </nav>
           <LangMenu />
-          <div className="shrink-0"><Account onProfile={() => setTab("profile")} /></div>
+          <div className="shrink-0"><Account onProfile={() => setTab("profile")} onCollection={() => setTab("myCollection")} /></div>
         </div>
       </header>
 
@@ -294,9 +295,10 @@ function Shell() {
             {tab === "home" && <Home onOpenTeam={openTeam} onOpenProfile={me ? () => setTab("profile") : undefined} />}
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
-            {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
+            {tab === "collection" && <Collection onOpenCard={setSpotlight} onOpenMyCollection={me ? () => setTab("myCollection") : undefined} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
-            {tab === "profile" && me && <Profile />}
+            {tab === "profile" && me && <Profile onOpenCollection={() => setTab("myCollection")} />}
+            {tab === "myCollection" && me && <MyCollection onOpenProfile={() => setTab("profile")} onRedeemCode={() => setTab("redeem")} onOpenCard={setSpotlight} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}

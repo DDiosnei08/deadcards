@@ -1,7 +1,7 @@
 import { SELF, env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { login } from "../helpers/fixtures";
-import { PROFILE_CARD_PATH, PROFILE_LEADERBOARD_PATH, type ProfileCardState, type ProfileLeaderboard } from "../../src/lib/profile";
+import { PROFILE_CARD_PATH, PROFILE_COLLECTION_PATH, PROFILE_LEADERBOARD_PATH, type ProfileCardState, type ProfileCollectionRedeem, type ProfileLeaderboard } from "../../src/lib/profile";
 
 const accountId = "123456789";
 const match = (id: number, win: boolean) => ({
@@ -40,6 +40,17 @@ function card(method: string, cookie?: string, id?: string, published?: boolean)
     method,
     headers,
     body: method === "PUT" || method === "PATCH" ? JSON.stringify({ accountId: id, published }) : undefined,
+  });
+}
+
+function collection(cookie?: string, id?: string) {
+  const headers = new Headers();
+  if (cookie) headers.set("cookie", cookie);
+  if (id) headers.set("content-type", "application/json");
+  return SELF.fetch(`http://test${PROFILE_COLLECTION_PATH}`, {
+    method: id ? "POST" : "GET",
+    headers,
+    body: id ? JSON.stringify({ accountId: id }) : undefined,
   });
 }
 
@@ -138,5 +149,30 @@ describe("Minha carta", () => {
     expect((await leaderboard()).cards).toHaveLength(1);
     expect(await (await card("PUT", cookie, secondId)).json()).toMatchObject({ published: false });
     expect((await leaderboard()).cards).toEqual([]);
+  });
+
+  it("resgata uma versão privada e estável por jogador, mesmo em pedidos concorrentes", async () => {
+    const { cookie } = await login("fan");
+    const { cookie: otherCookie } = await login("other");
+    const api = mockPublicStats();
+    expect((await collection()).status).toBe(401);
+    expect((await collection(undefined, accountId)).status).toBe(401);
+    expect((await collection(cookie, "123/other")).status).toBe(400);
+
+    const claims = await Promise.all([collection(cookie, accountId), collection(cookie, accountId)])
+      .then((responses) => Promise.all(responses.map((r) => r.json<ProfileCollectionRedeem>())));
+    expect(claims.filter((claim) => claim.added)).toHaveLength(1);
+    expect(claims[0].card).toEqual(claims[1].card);
+    expect(await (await collection(cookie)).json()).toEqual([claims[0].card]);
+    expect(await (await collection(otherCookie)).json()).toEqual([]);
+    expect(await (await card("POST", cookie)).json()).toMatchObject({ accountId: null });
+
+    await expireCard();
+    api.setMatches([match(100, false)]);
+    const duplicate = await (await collection(cookie, accountId)).json<ProfileCollectionRedeem>();
+    expect(duplicate).toEqual({ card: claims[0].card, added: false });
+    expect(await (await collection(otherCookie, accountId)).json()).toMatchObject({
+      added: true, card: { stats: { wins: 0 } },
+    });
   });
 });

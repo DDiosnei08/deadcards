@@ -1,4 +1,5 @@
 export const PROFILE_CARD_PATH = "/api/profile/card";
+export const PROFILE_COLLECTION_PATH = "/api/profile/collection";
 export const PROFILE_LEADERBOARD_PATH = "/api/profile/leaderboard";
 export const PROFILE_REFRESH_MS = 15 * 60 * 1000;
 
@@ -32,6 +33,8 @@ export type ProfileCardState = {
 
 export type LeaderboardCard = Omit<ProfileCardStats, "accountId" | "lastMatchId" | "lastMatchAt">;
 export type ProfileLeaderboard = { cards: LeaderboardCard[]; nextPage: number | null };
+export type CollectedProfileCard = { stats: ProfileCardStats; redeemedAt: number };
+export type ProfileCollectionRedeem = { card: CollectedProfileCard; added: boolean };
 
 // Public individual SteamID64s embed the unsigned 32-bit account number.
 export function normalizeAccountId(input: unknown): string | null {

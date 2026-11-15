@@ -1,6 +1,6 @@
 import { currentUser } from "./auth";
 import type { Env } from "./worker";
-import { normalizeAccountId, PROFILE_REFRESH_MS, type LeaderboardCard, type ProfileCardState, type ProfileCardStats, type ProfileLeaderboard } from "./lib/profile";
+import { normalizeAccountId, PROFILE_REFRESH_MS, type CollectedProfileCard, type LeaderboardCard, type ProfileCardState, type ProfileCardStats, type ProfileCollectionRedeem, type ProfileLeaderboard } from "./lib/profile";
 
 const MATCH_LIMIT = 30;
 const HISTORY_LIMIT = 20;
@@ -206,6 +206,41 @@ export async function profileLeaderboard(env: Env, request: Request): Promise<Re
   });
   const result: ProfileLeaderboard = { cards, nextPage: results.length > LEADERBOARD_PAGE_SIZE ? page + 1 : null };
   return json(result);
+}
+
+type CollectionRow = { snapshot: string; redeemed_at: number };
+
+function collectedCard(row: CollectionRow): CollectedProfileCard {
+  return { stats: JSON.parse(row.snapshot) as ProfileCardStats, redeemedAt: row.redeemed_at };
+}
+
+export async function profileCollection(env: Env, request: Request): Promise<Response> {
+  const user = await currentUser(env, request);
+  if (!user) return json({ code: "login" }, 401);
+  if (request.method === "GET") {
+    const { results } = await env.DB.prepare("SELECT snapshot, redeemed_at FROM profile_collection WHERE user_id = ? ORDER BY redeemed_at DESC, account_id")
+      .bind(user.id).all<CollectionRow>();
+    return json(results.map(collectedCard));
+  }
+  if (request.method !== "POST") return json({ code: "method" }, 405);
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) return json({ code: "origin" }, 403);
+
+  const body = await request.json<{ accountId?: unknown }>().catch(() => null);
+  const accountId = normalizeAccountId(body?.accountId);
+  if (!accountId) return json({ code: "invalid_id" }, 400);
+  const find = env.DB.prepare("SELECT snapshot, redeemed_at FROM profile_collection WHERE user_id = ? AND account_id = ?").bind(user.id, accountId);
+  const existing = await find.first<CollectionRow>();
+  if (existing) return json({ card: collectedCard(existing), added: false } satisfies ProfileCollectionRedeem);
+
+  const result = await lookupCard(env, accountId);
+  if ("code" in result) return json({ code: result.code }, result.status);
+  const inserted = await env.DB.prepare(`INSERT INTO profile_collection (user_id, account_id, snapshot, redeemed_at)
+    VALUES (?, ?, ?, ?) ON CONFLICT(user_id, account_id) DO NOTHING RETURNING snapshot, redeemed_at`)
+    .bind(user.id, accountId, JSON.stringify(result.stats), Date.now()).first<CollectionRow>();
+  const row = inserted ?? await find.first<CollectionRow>();
+  if (!row) return json({ code: "unavailable" }, 503);
+  return json({ card: collectedCard(row), added: !!inserted } satisfies ProfileCollectionRedeem);
 }
 
 export async function pruneProfileCache(env: Env) {
