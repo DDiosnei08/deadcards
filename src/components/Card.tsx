@@ -5,7 +5,7 @@ import { getPlayerOvr, getPlayerTrend, hexToRgba, teamOf, useLabel } from "../li
 import { strings, useT } from "../lib/i18n";
 import { getCardTier, ornamentSVG, particleSpecs, rarityStyleVars, ringSVG } from "../lib/rarity";
 import { useData } from "../lib/data";
-import { TeamLogo } from "./TeamLogo";
+import { TeamLogo3D } from "./TeamLogo3D";
 import { TrendBadge } from "./TrendBadge";
 
 type Variant = "team" | "medium" | "editor";
@@ -95,9 +95,7 @@ export function Card({ player, variant = "team", onOpen }: { player: Player; var
                 {label(player.position || "Flex")}
               </span>
               {team.logo ? (
-                <span className="team-logo-frame mt-1.5" title={team.name} style={{ width: editor ? 48 : 40, height: editor ? 48 : 40, borderRadius: 8 }}>
-                  <TeamLogo team={team} />
-                </span>
+                <div className="mt-1.5"><TeamLogo3D team={team} className={editor ? "size-12" : "size-10"} radius={8} /></div>
               ) : (
                 <span className="mt-1.5 rounded-sm border border-white/35 bg-white/20 px-2 py-0.5 text-[10px] font-black tracking-widest text-white uppercase">{team.tag || "FA"}</span>
               )}

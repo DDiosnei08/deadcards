@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { call, useData } from "../lib/data";
+import { pageTitle, pill, primaryBtn } from "../lib/ui";
 
 const field = "w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-zinc-200/15 text-sm text-zinc-100 placeholder:text-zinc-500";
 
@@ -37,7 +38,7 @@ export function Feedback() {
   return (
     <section className="noir-glass mx-auto max-w-2xl space-y-4 rounded-2xl p-5 sm:p-7">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-[0.11em] text-zinc-100 uppercase sm:text-3xl">Feedback</h1>
+        <h1 className={pageTitle}>Feedback</h1>
         <p className="mt-1.5 text-xs text-zinc-400">Achou um bug ou tem uma ideia? Vira uma issue pública no GitHub do projeto.</p>
       </div>
       <form onSubmit={submit} className="space-y-3">
@@ -49,7 +50,7 @@ export function Feedback() {
               role="radio"
               aria-checked={kind === k}
               onClick={() => setKind(k)}
-              className={`cursor-pointer rounded-xl border px-4 py-2 text-xs font-bold tracking-wider uppercase ${kind === k ? "border-white bg-zinc-100 text-zinc-950" : "border-zinc-200/15 bg-zinc-900/60 text-zinc-300"}`}
+              className={pill(kind === k)}
             >
               {k === "bug" ? "Reportar bug" : "Sugerir ideia"}
             </button>
@@ -68,13 +69,13 @@ export function Feedback() {
           className={field}
         />
         <label className="flex items-center gap-2 text-xs text-zinc-300">
-          <input type="checkbox" checked={anon} onChange={(e) => setAnon(e.target.checked)} />
+          <input type="checkbox" className="size-4 accent-zinc-100" checked={anon} onChange={(e) => setAnon(e.target.checked)} />
           Enviar anônimo
         </label>
         {!anon && <input value={nick} onChange={(e) => setNick(e.target.value)} placeholder="Seu nick (opcional)" aria-label="Nick" maxLength={40} className={field} />}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={busy} className="cursor-pointer rounded-xl bg-zinc-100 px-5 py-2.5 text-xs font-extrabold tracking-wider text-zinc-950 uppercase disabled:opacity-50">
+          <button type="submit" disabled={busy} className={primaryBtn}>
             {busy ? "Enviando…" : "Enviar"}
           </button>
           {msg && (
