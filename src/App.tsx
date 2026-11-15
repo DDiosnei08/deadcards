@@ -1,4 +1,4 @@
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { DataProvider, useData } from "./lib/data";
 import { hexToRgba } from "./lib/cards";
@@ -11,6 +11,7 @@ import { Spotlight } from "./components/Spotlight";
 import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
+import { Legal } from "./views/Legal";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -22,8 +23,8 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor";
-const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms";
+const TABS: { id: Exclude<Tab, "home" | "privacy" | "terms">; label: string }[] = [
   { id: "teams", label: "Times" },
   { id: "tierlist", label: "Tier List" },
   { id: "collection", label: "Coleção" },
@@ -97,6 +98,7 @@ function Shell() {
         </div>
       </header>
 
+      <ReducedMotionNotice />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <AnimatePresence mode="wait">
           <motion.div
@@ -111,7 +113,9 @@ function Shell() {
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
-            {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}          </motion.div>
+            {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
+            {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
+          </motion.div>
         </AnimatePresence>
       </main>
 
@@ -124,13 +128,37 @@ function Shell() {
             <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Relatar problema</a>
             <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Sugerir ideia</a>
             <a href={`${REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" className="hover:text-white">Como contribuir</a>
+            <button type="button" onClick={() => setTab("privacy")} className="hover:text-white cursor-pointer">Privacidade</button>
+            <button type="button" onClick={() => setTab("terms")} className="hover:text-white cursor-pointer">Termos</button>
           </nav>
         </div>
+        <p className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 text-xs text-zinc-500">
+          Projeto 4fun gerenciado pelo Hagizao:{" "}
+          <a href="https://www.youtube.com/@hagizao" target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-white">YouTube</a> ·{" "}
+          <a href="https://www.twitch.tv/hagizao" target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-white">Twitch</a> ·{" "}
+          <a href="https://kick.com/hagizao" target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-white">Kick</a>.
+          Não afiliado à Valve.
+        </p>
       </footer>
 
       <AnimatePresence>
         {spotlight && <Spotlight key="spotlight" playerId={spotlight} onClose={() => setSpotlight(null)} onSwitch={setSpotlight} onEdit={me?.admin ? editCard : undefined} />}
       </AnimatePresence>
     </>
+  );
+}
+
+function ReducedMotionNotice() {
+  const reduced = useReducedMotion();
+  const [hidden, setHidden] = useState(() => { try { return localStorage.getItem("rm-notice") === "1"; } catch { return false; } });
+  if (!reduced || hidden) return null;
+  const close = () => { setHidden(true); try { localStorage.setItem("rm-notice", "1"); } catch { /* sem storage */ } };
+  return (
+    <div role="status" className="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-start gap-3 rounded-xl border border-zinc-200/15 bg-zinc-900/80 px-4 py-3 text-xs text-zinc-300">
+        <p className="flex-1">Seu sistema está com <strong>movimento reduzido</strong> ativado, então as animações das cartas estão desligadas. Para vê-las, desative essa opção nas configurações de acessibilidade do seu sistema.</p>
+        <button type="button" onClick={close} aria-label="Fechar aviso" className="shrink-0 text-zinc-400 hover:text-white cursor-pointer">✕</button>
+      </div>
+    </div>
   );
 }
