@@ -53,9 +53,9 @@ export function Account() {
         whileTap={{ scale: 0.95 }}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 p-1 sm:pr-3 rounded-full border border-[#9146ff]/60 bg-zinc-900/70 hover:border-[#a970ff] shadow-[0_0_14px_rgba(145,70,255,0.3)] cursor-pointer"
+        className="flex items-center gap-2 p-1 sm:pr-3 rounded-full border border-zinc-200/25 bg-zinc-900/70 hover:border-zinc-200/60 shadow-[0_0_14px_rgba(244,244,245,0.15)] cursor-pointer"
       >
-        {me.image ? <img src={me.image} alt="" className="w-8 h-8 rounded-full" /> : <span className="w-8 h-8 rounded-full bg-[#9146ff] flex items-center justify-center text-white"><TwitchIcon /></span>}
+        {me.image ? <img src={me.image} alt="" className="w-8 h-8 rounded-full" /> : <span className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-bold text-white">{me.name.charAt(0).toUpperCase()}</span>}
         <span className="hidden sm:inline text-sm font-bold text-zinc-100 max-w-32 truncate">{me.name}</span>
       </motion.button>
       <AnimatePresence>
@@ -69,7 +69,6 @@ export function Account() {
             className="absolute right-0 mt-2 w-52 origin-top-right noir-glass-strong rounded-2xl p-2 z-50"
           >
             <div className="flex items-center gap-2 px-2 py-2 border-b border-zinc-200/10 mb-1">
-              <TwitchIcon className="w-4 h-4 text-[#a970ff]" />
               <span className="text-sm font-bold text-zinc-100 truncate">{me.name}</span>
             </div>
             <button
