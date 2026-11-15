@@ -9,6 +9,8 @@ export interface Env {
   BETTER_AUTH_SECRET: string;
   TWITCH_CLIENT_ID: string;
   TWITCH_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
   ADMINS: string;
 }
 
@@ -151,11 +153,82 @@ async function write(env: Env, request: Request, kind: string, id: string): Prom
   return Response.json({ ok: true });
 }
 
+// shortcut: sem limite de tentativas por usuário, códigos longos e aleatórios evitam chute; adicionar rate limit se vazar
+const CODE_VALID = "uses < max_uses AND (starts_at IS NULL OR starts_at <= unixepoch()) AND (expires_at IS NULL OR expires_at > unixepoch())";
+const INVALID_CODE = "código inválido, expirado ou esgotado";
+
+async function redeem(env: Env, request: Request): Promise<Response> {
+  const user = await currentUser(env, request);
+  if (!user) return bad("entre para resgatar", 401);
+  const body = (await request.json().catch(() => null)) as { code?: unknown } | null;
+  const code = typeof body?.code === "string" ? body.code.trim().toUpperCase() : "";
+  if (!code) return bad("código vazio");
+  const row = await env.DB.prepare(`SELECT player_id FROM redeem_codes WHERE code = ? AND ${CODE_VALID}`).bind(code).first<{ player_id: string }>();
+  if (!row) return bad(INVALID_CODE, 404);
+  try {
+    const [, consume] = await env.DB.batch([
+      env.DB.prepare(`INSERT INTO user_cards (user_id, player_id) SELECT ?, player_id FROM redeem_codes WHERE code = ? AND ${CODE_VALID}`).bind(user.id, code),
+      env.DB.prepare(`UPDATE redeem_codes SET uses = uses + 1 WHERE code = ? AND ${CODE_VALID}`).bind(code),
+    ]);
+    if (!consume.meta.changes) return bad(INVALID_CODE, 404);
+  } catch (e) {
+    if (String(e).includes("UNIQUE")) return bad("essa carta já está na sua coleção", 409);
+    throw e;
+  }
+  return Response.json({ playerId: row.player_id });
+}
+
+const timestamp = (v: unknown) => (v == null ? null : Number.isInteger(v) ? (v as number) : undefined);
+
+async function codes(env: Env, request: Request, rest: string): Promise<Response> {
+  if (request.method === "GET" && !rest) {
+    const rows = await env.DB.prepare("SELECT code, player_id, max_uses, uses, starts_at, expires_at FROM redeem_codes ORDER BY code").all();
+    return Response.json(rows.results);
+  }
+  if (request.method === "POST" && !rest) {
+    const b = (await request.json().catch(() => ({}))) as Record<string, any>;
+    const code = typeof b.code === "string" ? b.code.trim().toUpperCase() : "";
+    const maxUses = Number.isInteger(b.maxUses) && b.maxUses >= 1 ? (b.maxUses as number) : 0;
+    const startsAt = timestamp(b.startsAt);
+    const expiresAt = timestamp(b.expiresAt);
+    if (!/^[A-Z0-9-]{4,64}$/.test(code)) return bad("código deve ter de 4 a 64 letras, números ou hífen");
+    if (!maxUses) return bad("máximo de usos inválido");
+    if (typeof b.playerId !== "string" || !b.playerId) return bad("escolha o jogador");
+    if (startsAt === undefined || expiresAt === undefined) return bad("data inválida");
+    if (startsAt !== null && expiresAt !== null && expiresAt <= startsAt) return bad("a expiração deve ser depois do início");
+    try {
+      await env.DB.prepare("INSERT INTO redeem_codes (code, player_id, max_uses, starts_at, expires_at) VALUES (?,?,?,?,?)")
+        .bind(code, b.playerId, maxUses, startsAt, expiresAt).run();
+    } catch (e) {
+      if (String(e).includes("UNIQUE")) return bad("esse código já existe", 409);
+      if (String(e).includes("FOREIGN")) return bad("jogador não existe", 404);
+      throw e;
+    }
+    return Response.json({ ok: true });
+  }
+  if (request.method === "DELETE" && rest) {
+    await env.DB.prepare("DELETE FROM redeem_codes WHERE code = ?").bind(decodeURIComponent(rest)).run();
+    return Response.json({ ok: true });
+  }
+  return bad("rota inválida", 404);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/auth/")) return createAuth(env, request).handler(request);
     if (url.pathname === "/api/me") return Response.json(await currentUser(env, request));
+    if (url.pathname === "/api/codes" || url.pathname.startsWith("/api/codes/")) {
+      if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);
+      return codes(env, request, url.pathname.slice("/api/codes/".length));
+    }
+    if (url.pathname === "/api/redeem") return request.method === "POST" ? redeem(env, request) : bad("método não suportado", 405);
+    if (url.pathname === "/api/collection") {
+      const user = await currentUser(env, request);
+      if (!user) return Response.json([]);
+      const rows = await env.DB.prepare("SELECT player_id FROM user_cards WHERE user_id = ?").bind(user.id).all<{ player_id: string }>();
+      return Response.json(rows.results.map((r) => r.player_id));
+    }
     const admin = url.pathname.match(/^\/api\/(players|teams|heroes|settings|upload)\/([^/]+)$/);
     if (admin) {
       if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);

@@ -16,9 +16,9 @@ type Ctx = AppData & {
 
 const DataContext = createContext<Ctx | null>(null);
 
-async function call(path: string, init: RequestInit) {
+export async function call(path: string, init: RequestInit) {
   const r = await fetch(path, init);
-  const body = (await r.json().catch(() => ({}))) as { error?: string; url?: string };
+  const body = (await r.json().catch(() => ({}))) as { error?: string; url?: string; playerId?: string };
   if (!r.ok) throw new Error(body.error ?? `HTTP ${r.status}`);
   return body;
 }
@@ -27,6 +27,9 @@ export const api = {
   save: (kind: "players" | "teams" | "heroes" | "settings", id: string, body: unknown) =>
     call(`/api/${kind}/${encodeURIComponent(id)}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
   remove: (kind: "players" | "teams" | "heroes", id: string) => call(`/api/${kind}/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  createCode: (body: { code: string; playerId: string; maxUses: number; startsAt: number | null; expiresAt: number | null }) =>
+    call("/api/codes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  removeCode: (code: string) => call(`/api/codes/${encodeURIComponent(code)}`, { method: "DELETE" }),
   upload: async (folder: "players" | "teams" | "heroes" | "bg" | "home", file: File) =>
     (await call(`/api/upload/${folder}`, { method: "POST", headers: { "content-type": file.type }, body: file })).url!,
 };

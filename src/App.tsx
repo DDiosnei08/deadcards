@@ -6,16 +6,18 @@ import { Home } from "./views/Home";
 import { Teams } from "./views/Teams";
 import { TierList } from "./views/TierList";
 import { Collection } from "./views/Collection";
+import { Redeem } from "./views/Redeem";
 import { Spotlight } from "./components/Spotlight";
 import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "editor";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor";
 const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
   { id: "teams", label: "Times" },
   { id: "tierlist", label: "Tier List" },
   { id: "collection", label: "Coleção" },
+  { id: "redeem", label: "Resgatar" },
 ];
 
 export default function App() {
@@ -98,8 +100,8 @@ function Shell() {
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
-            {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
-          </motion.div>
+            {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
+            {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}          </motion.div>
         </AnimatePresence>
       </main>
 
