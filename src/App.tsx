@@ -63,18 +63,18 @@ function Shell() {
       <Background />
       <header className="sticky top-0 z-40 noir-glass border-b border-zinc-200/15">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
-          <button type="button" onClick={() => setTab("home")} className="brand-badge px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center gap-3 text-left">
+          <button type="button" onClick={() => setTab("home")} className="brand-badge shrink-0 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center gap-3 text-left">
             <span className="w-2.5 h-2.5 rounded-full bg-zinc-100 shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
             <span className="text-base sm:text-xl font-extrabold uppercase tracking-[0.18em] text-zinc-100"><span className="sm:hidden">DC</span><span className="hidden sm:inline">Deadlock Cards</span></span>
           </button>
-          <nav className="relative flex items-center gap-1.5 sm:gap-2.5" aria-label="Navegação principal">
+          <nav className="relative ml-auto min-w-0 flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto [scrollbar-width:none] py-1" aria-label="Navegação principal">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => { setFocusTeam(undefined); setTab(t.id); }}
                 aria-current={tab === t.id ? "page" : undefined}
-                className={`relative px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold tracking-wider uppercase cursor-pointer border transition-colors ${
+                className={`relative shrink-0 whitespace-nowrap px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold tracking-wider uppercase cursor-pointer border transition-colors ${
                   tab === t.id ? "text-zinc-950 border-white" : "text-zinc-300 hover:text-white border-zinc-200/15 bg-zinc-900/60"
                 }`}
               >
@@ -82,8 +82,8 @@ function Shell() {
                 <span className="relative">{t.label}</span>
               </button>
             ))}
-            <Account />
           </nav>
+          <div className="shrink-0"><Account /></div>
         </div>
       </header>
 
