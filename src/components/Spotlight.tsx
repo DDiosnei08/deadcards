@@ -1,14 +1,49 @@
 import { motion } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import gsap from "gsap";
+import { SplitText } from "gsap/SplitText";
 import { useData } from "../lib/data";
-import { formatDateBR, getPlayerHistory, getPlayerTrend, isMainCard, teamOf } from "../lib/cards";
+import { formatDateBR, getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf } from "../lib/cards";
 import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
 import { TrendBadge } from "./TrendBadge";
 
+gsap.registerPlugin(SplitText);
+const revealed = new Set<string>();
+
 export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: string; onClose: () => void; onSwitch: (id: string) => void; onEdit?: (id: string) => void }) {
   const { teams, players, settings } = useData();
   const player = players.find((p) => p.id === playerId);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const tier = player ? getCardTier(player, settings.tierConfig!) : null;
+  const ovr = player ? getPlayerOvr(player) : 0;
+  const reveal = useMemo(
+    () => !!tier && !revealed.has(playerId) && (tier.lvl >= 3 || !!tier.custom) && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [playerId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  useLayoutEffect(() => {
+    if (!reveal || !cardRef.current) return;
+    revealed.add(playerId);
+    const ovrEl = cardRef.current.querySelector("[data-ovr]")?.firstChild;
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
+      tl.fromTo(flashRef.current, { opacity: 0, scale: 0.6 }, { opacity: 0.85, scale: 1.15, duration: 0.18, ease: "power2.out" })
+        .to(flashRef.current, { opacity: 0, scale: 1.5, duration: 0.35, ease: "power2.in" });
+      tl.from(cardRef.current, { transformPerspective: 1200, rotateY: -360, scale: 0.6, filter: "brightness(2.5)", duration: 0.9, ease: "power3.out", clearProps: "transform,filter" }, 0);
+      if (ovrEl) {
+        const n = { v: 0 };
+        tl.to(n, { v: ovr, duration: 0.5, ease: "power2.out", onUpdate: () => { ovrEl.nodeValue = String(Math.round(n.v)); } }, 0.35);
+      }
+      if (nameRef.current) {
+        const split = SplitText.create(nameRef.current, { type: "chars" });
+        tl.from(split.chars, { opacity: 0, y: 12, duration: 0.3, stagger: 0.025, ease: "power2.out" }, 0.45);
+      }
+    });
+    return () => { ctx.revert(); if (ovrEl) ovrEl.nodeValue = String(ovr); };
+  }, [reveal, playerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -18,7 +53,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
 
   if (!player) return null;
   const team = teamOf(teams, player);
-  const tier = getCardTier(player, settings.tierConfig!);
+  if (!tier) return null;
   const history = getPlayerHistory(player);
   const groupKey = player.variantOf || player.id;
   const versions = players.filter((p) => p.id === groupKey || p.variantOf === groupKey);
@@ -42,14 +77,19 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <motion.div key={player.id} initial={{ rotateY: -90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ transformPerspective: 1200 }}>
-          <Card player={player} variant="editor" />
+        <motion.div key={player.id} className="relative" initial={reveal ? false : { rotateY: -90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ transformPerspective: 1200 }}>
+          <div ref={cardRef}>
+            <Card player={player} variant="editor" />
+          </div>
+          {reveal && (
+            <div ref={flashRef} aria-hidden="true" className="pointer-events-none absolute -inset-12 rounded-full opacity-0 mix-blend-screen" style={{ background: `radial-gradient(circle, ${tier.hi} 0%, ${tier.c}aa 35%, transparent 70%)` }} />
+          )}
         </motion.div>
 
         <div className="flex-1 min-w-0 w-full space-y-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-black uppercase tracking-[0.12em] text-white">{player.name}</h2>
+              <h2 className="text-3xl font-black uppercase tracking-[0.12em] text-white"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
               <p className="text-sm text-zinc-300 mt-1">{team.name} ({team.tag}) • {player.position} • {player.hero}</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Fechar" className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-200/20 text-zinc-300 hover:text-white cursor-pointer">✕</button>

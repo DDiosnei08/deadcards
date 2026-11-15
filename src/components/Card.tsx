@@ -79,7 +79,7 @@ export function Card({ player, variant = "team", onOpen }: { player: Player; var
           <div className="relative z-10 flex items-start justify-between gap-2">
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">
-                <span className={`${editor ? "text-6xl" : medium ? "text-4xl" : "text-5xl"} font-black leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]`}>{ovr}</span>
+                <span data-ovr className={`${editor ? "text-6xl" : medium ? "text-4xl" : "text-5xl"} font-black leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]`}>{ovr}</span>
                 <TrendBadge delta={getPlayerTrend(player)} size={editor ? "editor" : "card"} />
               </div>
               <span className="mt-1.5 px-2 py-0.5 rounded bg-black/65 border border-white/25 text-[10px] font-extrabold uppercase tracking-widest text-zinc-100">
