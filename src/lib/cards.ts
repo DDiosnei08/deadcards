@@ -25,7 +25,7 @@ export const DEFAULT_TIER_CONFIG: TierBand[] = [
   { key: "D", min: 1, max: 69, bg: "#7fff7f", text: "#18181b" },
 ];
 
-const STAT_KEYS = ["MIR", "MAC", "SUP", "MOV", "POL", "CON"] as const;
+export const STAT_KEYS = ["MIR", "MAC", "SUP", "MOV", "POL", "CON"] as const;
 
 export function calculateOVR(stats: Player["stats"]): number {
   const sum = STAT_KEYS.reduce((acc, k) => acc + (Number(stats[k]) || 0), 0);
