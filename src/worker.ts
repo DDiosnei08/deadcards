@@ -118,7 +118,7 @@ async function upload(env: Env, request: Request, folder: string): Promise<Respo
 async function write(env: Env, request: Request, kind: string, id: string): Promise<Response> {
   const del = request.method === "DELETE";
   if (!del && request.method !== "PUT") return bad("método não suportado", 405);
-  const b = del ? {} : ((await request.json()) as Record<string, any>);
+  const b = del ? {} : ((await request.json().catch(() => null)) as Record<string, any> | null) ?? {};
   const db = env.DB;
   if (kind === "players") {
     if (del) await db.prepare("DELETE FROM players WHERE id = ?").bind(id).run();
