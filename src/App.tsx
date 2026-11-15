@@ -12,6 +12,7 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
+import { LangProvider } from "./lib/i18n";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -34,9 +35,11 @@ const TABS: { id: Exclude<Tab, "home" | "privacy" | "terms">; label: string }[] 
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
-      <DataProvider>
-        {location.pathname === "/login" ? <><Background /><Login /></> : <Shell />}
-      </DataProvider>
+      <LangProvider>
+        <DataProvider>
+          {location.pathname === "/login" ? <><Background /><Login /></> : <Shell />}
+        </DataProvider>
+      </LangProvider>
     </MotionConfig>
   );
 }

@@ -237,6 +237,8 @@ export default {
       if (admin[1] !== "heroes" && !ID_RE.test(id)) return bad("id inválido");
       return write(env, request, admin[1], id);
     }
+    // Só o país (cf.country), para sugerir o idioma na primeira visita; nada é guardado.
+    if (url.pathname === "/api/locale") return Response.json({ country: request.cf?.country ?? null }, { headers: { "cache-control": "private, no-store" } });
     if (url.pathname === "/api/health") return Response.json({ ok: true });
     if (url.pathname === "/api/data") return appData(env);
     if (url.pathname === "/api/deadlock") {
