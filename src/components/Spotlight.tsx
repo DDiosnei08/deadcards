@@ -6,7 +6,7 @@ import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
 import { TrendBadge } from "./TrendBadge";
 
-export function Spotlight({ playerId, onClose, onSwitch }: { playerId: string; onClose: () => void; onSwitch: (id: string) => void }) {
+export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: string; onClose: () => void; onSwitch: (id: string) => void; onEdit?: (id: string) => void }) {
   const { teams, players, settings } = useData();
   const player = players.find((p) => p.id === playerId);
 
@@ -58,6 +58,7 @@ export function Spotlight({ playerId, onClose, onSwitch }: { playerId: string; o
           <div className="flex flex-wrap items-center gap-2">
             <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? "Especial" : tier.name}</span>
             <TrendBadge delta={getPlayerTrend(player)} size="editor" />
+            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-950 hover:bg-white cursor-pointer">Editar carta</button>}
             {player.special && player.specialText && <span className="text-xs text-amber-200 font-bold">✦ {player.specialText}</span>}
           </div>
 

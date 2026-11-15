@@ -7,8 +7,10 @@ import { Teams } from "./views/Teams";
 import { TierList } from "./views/TierList";
 import { Collection } from "./views/Collection";
 import { Spotlight } from "./components/Spotlight";
+import { Login } from "./views/Login";
+import { Editor } from "./views/Editor";
 
-type Tab = "home" | "teams" | "tierlist" | "collection";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "editor";
 const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
   { id: "teams", label: "Times" },
   { id: "tierlist", label: "Tier List" },
@@ -18,7 +20,7 @@ const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
 export default function App() {
   return (
     <DataProvider>
-      <Shell />
+      {location.pathname === "/login" ? <><Background /><Login /></> : <Shell />}
     </DataProvider>
   );
 }
@@ -45,7 +47,11 @@ function Shell() {
   const [tab, setTab] = useState<Tab>("home");
   const [focusTeam, setFocusTeam] = useState<string>();
   const [spotlight, setSpotlight] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const { me } = useData();
+  const tabs = me?.admin ? [...TABS, { id: "editor" as const, label: "Editor" }] : TABS;
   const openTeam = (id: string) => { setFocusTeam(id); setTab("teams"); };
+  const editCard = (id: string) => { setSpotlight(null); setEditId(id); setTab("editor"); };
 
   return (
     <>
@@ -57,7 +63,7 @@ function Shell() {
             <span className="text-base sm:text-xl font-extrabold uppercase tracking-[0.18em] text-zinc-100">Deadlock Cards</span>
           </button>
           <nav className="relative flex items-center gap-1.5 sm:gap-2.5" aria-label="Navegação principal">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -88,12 +94,13 @@ function Shell() {
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
+            {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
           </motion.div>
         </AnimatePresence>
       </main>
 
       <AnimatePresence>
-        {spotlight && <Spotlight key="spotlight" playerId={spotlight} onClose={() => setSpotlight(null)} onSwitch={setSpotlight} />}
+        {spotlight && <Spotlight key="spotlight" playerId={spotlight} onClose={() => setSpotlight(null)} onSwitch={setSpotlight} onEdit={me?.admin ? editCard : undefined} />}
       </AnimatePresence>
     </>
   );
