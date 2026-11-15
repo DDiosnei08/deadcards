@@ -1,5 +1,5 @@
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { DataProvider, useData } from "./lib/data";
 import { hexToRgba } from "./lib/cards";
 import { Home } from "./views/Home";
@@ -12,7 +12,7 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
-import { LANGS, LANG_LABEL, LangProvider, strings, useLang, useT } from "./lib/i18n";
+import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } from "./lib/i18n";
 import { Feedback } from "./views/Feedback";
 
 const REPO = "https://github.com/hagizao/deadcards";
@@ -82,6 +82,43 @@ const S = strings({
   },
 });
 
+// Bandeiras simplificadas (viewBox 3:2) para ler bem a ~20x14 px.
+const FLAGS: Record<Lang, (clip: string) => React.ReactNode> = {
+  pt: () => (
+    <>
+      <rect width="60" height="40" fill="#009b3a" />
+      <path d="M30 4 56 20 30 36 4 20z" fill="#fedf00" />
+      <circle cx="30" cy="20" r="9" fill="#002776" />
+      <path d="M21.5 19q8.5-3 17 3" stroke="#fff" strokeWidth="2" fill="none" />
+    </>
+  ),
+  en: (clip) => (
+    <>
+      <clipPath id={clip}><path d="M30 20h30v20zv20H0zH0V0zV0h30z" /></clipPath>
+      <rect width="60" height="40" fill="#012169" />
+      <path d="M0 0 60 40M60 0 0 40" stroke="#fff" strokeWidth="8" />
+      <path d="M0 0 60 40M60 0 0 40" stroke="#c8102e" strokeWidth="4" clipPath={`url(#${clip})`} />
+      <path d="M30 0v40M0 20h60" stroke="#fff" strokeWidth="12" />
+      <path d="M30 0v40M0 20h60" stroke="#c8102e" strokeWidth="7" />
+    </>
+  ),
+  es: () => (
+    <>
+      <rect width="60" height="40" fill="#aa151b" />
+      <rect y="10" width="60" height="20" fill="#f1bf00" />
+    </>
+  ),
+};
+
+function Flag({ lang }: { lang: Lang }) {
+  const clip = useId().replace(/:/g, "");
+  return (
+    <span className="inline-flex shrink-0 overflow-hidden rounded-sm ring-1 ring-zinc-200/20">
+      <svg viewBox="0 0 60 40" className="block w-5 aspect-[3/2]" aria-hidden="true">{FLAGS[lang](clip)}</svg>
+    </span>
+  );
+}
+
 function LangMenu() {
   const t = useT(S);
   const { lang, setLang } = useLang();
@@ -123,10 +160,7 @@ function LangMenu() {
         aria-expanded={open}
         className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2.5 rounded-xl border border-zinc-200/15 bg-zinc-900/60 text-xs sm:text-sm font-semibold uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
-        </svg>
+        <Flag lang={lang} />
         <span className="hidden sm:inline">{lang}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`hidden sm:block w-3 h-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`} aria-hidden="true">
           <path d="m6 9 6 6 6-6" />
@@ -155,7 +189,10 @@ function LangMenu() {
                 onClick={() => { setLang(l); setOpen(false); button.current?.focus(); }}
                 className={`w-full flex items-center justify-between gap-2 text-left px-2 py-2 rounded-lg text-sm cursor-pointer hover:text-white hover:bg-zinc-800/70 focus-visible:text-white focus-visible:bg-zinc-800/70 ${l === lang ? "text-white font-bold" : "text-zinc-300"}`}
               >
-                {LANG_LABEL[l]}
+                <span className="flex items-center gap-2">
+                  <Flag lang={l} />
+                  {LANG_LABEL[l]}
+                </span>
                 {l === lang && (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden="true">
                     <path d="m5 12 5 5L20 7" />
