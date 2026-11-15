@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
+import { Icon } from "./Icon";
+import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
 import { PROFILE_LEADERBOARD_PATH, type ProfileLeaderboard } from "../lib/profile";
 import { useProfileCardDisplay } from "../lib/profileDisplay";
+import { getProfileCardTier } from "../lib/rarity";
+import { pill } from "../lib/ui";
 
 const S = strings({
   pt: {
-    title: "Ranking dos participantes", order: "Por patente e percentual de vitórias nas partidas recentes.",
+    title: "Ranking dos participantes", order: "Por patente e taxa de vitórias.",
     empty: "As cartas publicadas pelos participantes aparecem aqui.",
     loading: "Carregando ranking…", error: "Não foi possível carregar o ranking.",
     retry: "Tentar novamente", more: "Ver mais cartas", profile: "Abrir meu perfil", login: "Entrar para participar",
   },
   en: {
-    title: "Community leaderboard", order: "By rank and recent match win rate.",
+    title: "Community leaderboard", order: "By rank and recent win rate.",
     empty: "Cards shared by participants will appear here.",
     loading: "Loading leaderboard…", error: "Could not load the leaderboard.",
     retry: "Try again", more: "See more cards", profile: "Open my profile", login: "Sign in to join",
   },
   es: {
-    title: "Clasificación de participantes", order: "Por rango y porcentaje de victorias recientes.",
+    title: "Clasificación de participantes", order: "Por rango y porcentaje de victorias.",
     empty: "Aquí aparecen las cartas que publican los participantes.",
     loading: "Cargando clasificación…", error: "No se pudo cargar la clasificación.",
     retry: "Reintentar", more: "Ver más cartas", profile: "Abrir mi perfil", login: "Inicia sesión para participar",
@@ -31,14 +35,14 @@ async function loadPage(page: number, signal?: AbortSignal): Promise<ProfileLead
   return response.json() as Promise<ProfileLeaderboard>;
 }
 
-const button = "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg bg-zinc-800 px-4 text-sm font-bold text-zinc-100 hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 active:bg-zinc-600 disabled:cursor-wait disabled:opacity-60";
-
 export function ParticipantsRanking({ onOpenProfile }: { onOpenProfile?: () => void }) {
   const t = useT(S);
-  const { faceFor } = useProfileCardDisplay();
+  const { heroIcon } = useData();
+  const { faceFor, percent } = useProfileCardDisplay();
   const [board, setBoard] = useState<ProfileLeaderboard>();
   const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [openIndex, setOpenIndex] = useState<number>();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,31 +67,45 @@ export function ParticipantsRanking({ onOpenProfile }: { onOpenProfile?: () => v
   };
 
   return (
-    <section aria-labelledby="participants-title" className="noir-glass flex min-w-0 flex-col gap-6 rounded-2xl p-4 sm:p-6 lg:col-span-2">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 id="participants-title" className="font-display text-xl font-black tracking-wide text-dl-text sm:text-2xl">{t.title}</h2>
-          <p className="text-sm text-zinc-400">{t.order}</p>
-        </div>
+    <section aria-label={t.title} className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 lg:overflow-y-auto">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <p className="text-xs text-zinc-400">{t.order}</p>
         {onOpenProfile
-          ? <button type="button" className={button} onClick={onOpenProfile}>{t.profile}</button>
-          : <a className={button} href="/login">{t.login}</a>}
-      </header>
+          ? <button type="button" className={pill(false)} onClick={onOpenProfile}>{t.profile}</button>
+          : <a className={pill(false)} href="/login">{t.login}</a>}
+      </div>
       {!board && !error && <p role="status" className="text-sm text-zinc-400">{t.loading}</p>}
-      {board?.cards.length === 0 && <p className="text-sm text-zinc-400">{t.empty}</p>}
+      {board?.cards.length === 0 && <p className="noir-glass rounded-xl p-4 text-sm text-zinc-400">{t.empty}</p>}
       {!!board?.cards.length && (
-        <ol className="grid grid-cols-1 justify-items-center gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {board.cards.map((stats, index) => (
-            <li key={index} className="flex w-full min-w-0 flex-col items-center gap-2">
-              <span className="text-sm font-black text-zinc-300">#{index + 1}</span>
-              <Card profile={faceFor(stats)} />
-            </li>
-          ))}
+        <ol className="flex flex-col gap-2">
+          {board.cards.map((stats, index) => {
+            const face = faceFor(stats);
+            const tier = getProfileCardTier(face.rankTier);
+            const icon = heroIcon(face.hero);
+            const open = openIndex === index;
+            return (
+              <li key={index} className="min-w-0">
+                <button type="button" aria-expanded={open} onClick={() => setOpenIndex(open ? undefined : index)}
+                  className="noir-glass flex min-h-16 w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-zinc-800/80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-zinc-100 sm:gap-3">
+                  <span className="w-8 shrink-0 text-center text-sm font-black text-zinc-300 tabular-nums">#{index + 1}</span>
+                  {icon && <img src={icon} alt="" loading="lazy" className="size-8 shrink-0 rounded-md object-cover sm:size-10" />}
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate font-display text-sm font-black text-dl-text uppercase">{face.name}</span>
+                    <span className="truncate text-xs text-zinc-300">{face.hero} · {face.rank}</span>
+                  </span>
+                  <span className="text-xs font-bold text-zinc-100 tabular-nums">{percent.format(stats.wins / stats.matches)}</span>
+                  <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }} title={tier.name}>{tier.tierKey}</span>
+                  <Icon name={open ? "chevron-up" : "chevron-down"} className="size-3.5" />
+                </button>
+                {open && <div className="flex justify-center py-3"><Card profile={face} /></div>}
+              </li>
+            );
+          })}
         </ol>
       )}
       {error && <p role="status" className="text-sm text-red-300">{t.error}</p>}
       {(error || board?.nextPage != null) && (
-        <button type="button" className={`${button} self-center`} disabled={loadingMore} onClick={loadMore}>
+        <button type="button" className={`${pill(false)} self-center disabled:cursor-wait disabled:opacity-60`} disabled={loadingMore} onClick={loadMore}>
           {loadingMore ? t.loading : error ? t.retry : t.more}
         </button>
       )}
