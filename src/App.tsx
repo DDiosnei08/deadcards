@@ -13,6 +13,7 @@ import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
 import { LANGS, LANG_LABEL, LangProvider, strings, useLang, useT, type Lang } from "./lib/i18n";
+import { Feedback } from "./views/Feedback";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -24,7 +25,7 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback";
 const TABS = ["teams", "tierlist", "collection", "redeem"] as const;
 
 const S = strings({
@@ -34,8 +35,7 @@ const S = strings({
     projectLinks: "Links do projeto",
     language: "Idioma",
     github: "Código aberto no GitHub",
-    report: "Relatar problema",
-    suggest: "Sugerir ideia",
+    feedback: "Relatar problema / sugerir ideia",
     contribute: "Como contribuir",
     privacy: "Privacidade",
     terms: "Termos",
@@ -52,8 +52,7 @@ const S = strings({
     projectLinks: "Project links",
     language: "Language",
     github: "Open source on GitHub",
-    report: "Report a problem",
-    suggest: "Suggest an idea",
+    feedback: "Report a bug / suggest an idea",
     contribute: "How to contribute",
     privacy: "Privacy",
     terms: "Terms",
@@ -70,8 +69,7 @@ const S = strings({
     projectLinks: "Enlaces del proyecto",
     language: "Idioma",
     github: "Código abierto en GitHub",
-    report: "Reportar un problema",
-    suggest: "Sugerir una idea",
+    feedback: "Reportar un problema / sugerir una idea",
     contribute: "Cómo contribuir",
     privacy: "Privacidad",
     terms: "Términos",
@@ -188,6 +186,7 @@ function Shell() {
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
+            {tab === "feedback" && <Feedback />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -198,8 +197,7 @@ function Shell() {
             <GitHubIcon /> {t.github}
           </a>
           <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t.projectLinks}>
-            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">{t.report}</a>
-            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">{t.suggest}</a>
+            <button type="button" onClick={() => setTab("feedback")} className="hover:text-white cursor-pointer">{t.feedback}</button>
             <a href={`${REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" className="hover:text-white">{t.contribute}</a>
             <button type="button" onClick={() => setTab("privacy")} className="hover:text-white cursor-pointer">{t.privacy}</button>
             <button type="button" onClick={() => setTab("terms")} className="hover:text-white cursor-pointer">{t.terms}</button>

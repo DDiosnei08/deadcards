@@ -12,6 +12,7 @@ export interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   ADMINS: string;
+  GITHUB_TOKEN: string;
 }
 
 const IMAGE_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
@@ -214,6 +215,41 @@ async function codes(env: Env, request: Request, rest: string): Promise<Response
   return bad("rota inválida", 404);
 }
 
+const FEEDBACK_KINDS = { bug: "Bug", idea: "Ideia" } as const;
+const FEEDBACK_GAP_SECONDS = 60;
+
+async function feedback(env: Env, request: Request): Promise<Response> {
+  const b = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  if (b?.website) return Response.json({ ok: true });
+  const kind = b?.kind === "bug" || b?.kind === "idea" ? b.kind : null;
+  const title = typeof b?.title === "string" ? b.title.trim() : "";
+  const message = typeof b?.message === "string" ? b.message.trim() : "";
+  const nick = typeof b?.nick === "string" ? b.nick.trim().slice(0, 40) : "";
+  if (!kind) return bad("tipo inválido");
+  if (title.length < 5 || title.length > 100) return bad("título deve ter de 5 a 100 caracteres");
+  if (message.length < 10 || message.length > 3000) return bad("mensagem deve ter de 10 a 3000 caracteres");
+  // shortcut: limite por IP reaproveitando api_cache, trocar por Rate Limiting binding se houver spam
+  const ip = request.headers.get("cf-connecting-ip") ?? "local";
+  const key = `feedback:${ip}`;
+  const now = Math.floor(Date.now() / 1000);
+  const last = await env.DB.prepare("SELECT fetched_at FROM api_cache WHERE cache_key = ?").bind(key).first<number>("fetched_at");
+  if (last && now - last < FEEDBACK_GAP_SECONDS) return bad("aguarde um minuto antes de enviar de novo", 429);
+  const noPing = (t: string) => t.replace(/@/g, "@​");
+  const body = `${noPing(message)}
+
+---
+Enviado pelo site por **${nick ? noPing(nick) : "anônimo"}**.`;
+  const r = await fetch("https://api.github.com/repos/hagizao/deadcards/issues", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.GITHUB_TOKEN}`, accept: "application/vnd.github+json", "user-agent": "deadcards-site" },
+    body: JSON.stringify({ title: `[${FEEDBACK_KINDS[kind]}] ${noPing(title)}`, body }),
+  });
+  if (!r.ok) return bad("não foi possível enviar agora, tente mais tarde", 502);
+  await env.DB.prepare(UPSERT_CACHE).bind(key, "", now).run();
+  const issue = (await r.json()) as { html_url: string };
+  return Response.json({ url: issue.html_url });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -223,6 +259,7 @@ export default {
       if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);
       return codes(env, request, url.pathname.slice("/api/codes/".length));
     }
+    if (url.pathname === "/api/feedback") return request.method === "POST" ? feedback(env, request) : bad("método não suportado", 405);
     if (url.pathname === "/api/redeem") return request.method === "POST" ? redeem(env, request) : bad("método não suportado", 405);
     if (url.pathname === "/api/collection") {
       const user = await currentUser(env, request);
