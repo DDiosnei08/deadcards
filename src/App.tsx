@@ -1,5 +1,5 @@
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DataProvider, useData } from "./lib/data";
 import { hexToRgba } from "./lib/cards";
 import { Home } from "./views/Home";
@@ -12,7 +12,7 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
-import { LANGS, LANG_LABEL, LangProvider, strings, useLang, useT, type Lang } from "./lib/i18n";
+import { LANGS, LANG_LABEL, LangProvider, strings, useLang, useT } from "./lib/i18n";
 import { Feedback } from "./views/Feedback";
 
 const REPO = "https://github.com/hagizao/deadcards";
@@ -82,19 +82,91 @@ const S = strings({
   },
 });
 
-// Select nativo: teclado, leitor de tela e menu de celular de graça. A cor do texto vem do tema escuro.
-function LangSelect({ className = "" }: { className?: string }) {
+function LangMenu() {
   const t = useT(S);
   const { lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const items = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    items.current[LANGS.indexOf(lang)]?.focus();
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === "Escape") { setOpen(false); button.current?.focus(); }
+        else if (e.key === "Tab") setOpen(false);
+      } else if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", close);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", close); };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const move = (e: React.KeyboardEvent, i: number) => {
+    const d = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    items.current[(i + d + LANGS.length) % LANGS.length]?.focus();
+  };
+
   return (
-    <select
-      aria-label={t.language}
-      value={lang}
-      onChange={(e) => setLang(e.target.value as Lang)}
-      className={`rounded-xl border border-zinc-200/15 bg-zinc-900/60 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer ${className}`}
-    >
-      {LANGS.map((l) => <option key={l} value={l} className="bg-zinc-900 normal-case">{LANG_LABEL[l]}</option>)}
-    </select>
+    <div ref={ref} className="relative shrink-0">
+      <motion.button
+        ref={button}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        whileTap={{ scale: 0.95 }}
+        aria-label={t.language}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2.5 rounded-xl border border-zinc-200/15 bg-zinc-900/60 text-xs sm:text-sm font-semibold uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+        </svg>
+        <span className="hidden sm:inline">{lang}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`hidden sm:block w-3 h-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`} aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </motion.button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            aria-label={t.language}
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-2 w-40 origin-top-right noir-glass-strong rounded-2xl p-2 z-50"
+          >
+            {LANGS.map((l, i) => (
+              <button
+                key={l}
+                ref={(el) => { items.current[i] = el; }}
+                type="button"
+                role="menuitemradio"
+                aria-checked={l === lang}
+                tabIndex={l === lang ? 0 : -1}
+                onKeyDown={(e) => move(e, i)}
+                onClick={() => { setLang(l); setOpen(false); button.current?.focus(); }}
+                className={`w-full flex items-center justify-between gap-2 text-left px-2 py-2 rounded-lg text-sm cursor-pointer hover:text-white hover:bg-zinc-800/70 focus-visible:text-white focus-visible:bg-zinc-800/70 ${l === lang ? "text-white font-bold" : "text-zinc-300"}`}
+              >
+                {LANG_LABEL[l]}
+                {l === lang && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden="true">
+                    <path d="m5 12 5 5L20 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -164,7 +236,7 @@ function Shell() {
               </button>
             ))}
           </nav>
-          <LangSelect className="hidden xl:block shrink-0" />
+          <LangMenu />
           <div className="shrink-0"><Account /></div>
         </div>
       </header>
@@ -202,7 +274,6 @@ function Shell() {
             <button type="button" onClick={() => setTab("privacy")} className="hover:text-white cursor-pointer">{t.privacy}</button>
             <button type="button" onClick={() => setTab("terms")} className="hover:text-white cursor-pointer">{t.terms}</button>
           </nav>
-          <LangSelect className="xl:hidden" />
         </div>
         <p className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 text-xs text-zinc-500">
           {t.managed}{" "}
