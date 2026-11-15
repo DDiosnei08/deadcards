@@ -1,11 +1,12 @@
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useAnimate } from "motion/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, useData } from "../lib/data";
 import { DEFAULT_TIER_CONFIG, REGIONS, calculateOVR, getPlayerHistory, getPlayerOvr } from "../lib/cards";
-import { FRAME_PRESETS } from "../lib/rarity";
+import { FRAME_PRESETS, getCardTier, type Tier } from "../lib/rarity";
 import type { BgSettings, Player, Stats, Team, TierBand } from "../lib/types";
 import { Card } from "../components/Card";
 import { TeamLogo } from "../components/TeamLogo";
+import { HoldButton } from "../components/HoldButton";
 
 const POSITIONS = ["Carry", "OffCarry", "Frontline", "Flex", "Suporte"];
 const STAT_KEYS: (keyof Stats)[] = ["MIR", "MAC", "SUP", "MOV", "POL", "CON"];
@@ -129,7 +130,7 @@ function withHistory(p: Player, date: string, rebase: boolean): Player {
 }
 
 function PlayerForm({ editId, onEditId }: { editId: string | null; onEditId: (id: string | null) => void }) {
-  const { players, teams, heroNames, heroIcon, reload } = useData();
+  const { players, teams, heroNames, heroIcon, settings, reload } = useData();
   const existing = editId ? players.find((p) => p.id === editId) : undefined;
   const [d, setD] = useState<Player>(() => (existing ? structuredClone({ ...existing, ovr: getPlayerOvr(existing) }) : blankPlayer(teams[0]?.id ?? "")));
   const [date, setDate] = useState(today);
@@ -147,7 +148,7 @@ function PlayerForm({ editId, onEditId }: { editId: string | null; onEditId: (id
     run(async () => { await api.save("players", id, body); onEditId(id); }, `Carta de "${body.name}" salva!`);
   };
   const remove = () => {
-    if (!d.id || !confirm(`Excluir a carta de "${d.name}"? Isso não pode ser desfeito.`)) return;
+    if (!d.id) return;
     run(async () => { await api.remove("players", d.id); onEditId(null); }, "Carta excluída.");
   };
 
@@ -268,7 +269,7 @@ function PlayerForm({ editId, onEditId }: { editId: string | null; onEditId: (id
 
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className={primary} disabled={busy} onClick={save}>{busy ? "Salvando…" : "Salvar carta"}</button>
-          {d.id && <button type="button" className={danger} disabled={busy} onClick={remove}>Excluir</button>}
+          {d.id && <HoldButton className={danger} disabled={busy} onConfirm={remove} label={`Excluir a carta de ${d.name}`}>Segure p/ excluir</HoldButton>}
           {d.id && <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" checked={!!d.inactive} onChange={(e) => set({ inactive: e.target.checked || undefined })} className="accent-zinc-100" />Fora do elenco (versão guardada)</label>}
           <Toast msg={msg} />
         </div>
@@ -276,9 +277,29 @@ function PlayerForm({ editId, onEditId }: { editId: string | null; onEditId: (id
 
       <div className="lg:sticky lg:top-28 flex justify-center">
         <motion.div key={d.hero + (d.special ? frame.style : "")} initial={{ rotateY: -25, opacity: 0.4 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 18 }} style={{ transformPerspective: 1200 }}>
-          <Card player={preview} variant="editor" />
+          <TierPulse tier={getCardTier(preview, settings.tierConfig!)}>
+            <Card player={preview} variant="editor" />
+          </TierPulse>
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+function TierPulse({ tier, children }: { tier: Tier; children: ReactNode }) {
+  const [scope, animate] = useAnimate<HTMLDivElement>();
+  const id = `${tier.key}:${tier.frame ?? ""}`;
+  const prev = useRef(id);
+  useEffect(() => {
+    if (prev.current === id) return;
+    prev.current = id;
+    animate(scope.current, { scale: [1, 1.04, 1] }, { duration: 0.4, ease: [0.22, 1, 0.36, 1] });
+    animate("[data-glow]", { opacity: [0, 0.6, 0] }, { duration: 0.3 });
+  }, [id, animate, scope]);
+  return (
+    <div ref={scope} className="relative">
+      {children}
+      <div data-glow aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[28px] opacity-0" style={{ boxShadow: `0 0 48px 12px ${tier.c}` }} />
     </div>
   );
 }
@@ -295,8 +316,6 @@ function TeamsForm() {
     run(async () => { await api.save("teams", id, { ...d, id, name: d.name.trim(), tag: d.tag.trim().toUpperCase().slice(0, 6) }); setD(null); }, `Time "${d.name}" salvo!`);
   };
   const remove = (t: Team) => {
-    const n = players.filter((p) => p.teamId === t.id).length;
-    if (!confirm(`Excluir "${t.name}" e suas ${n} cartas? Isso não pode ser desfeito.`)) return;
     run(() => api.remove("teams", t.id), "Time excluído.");
   };
 
@@ -315,7 +334,7 @@ function TeamsForm() {
               <p className="text-xs text-zinc-400">{t.region} · {players.filter((p) => p.teamId === t.id).length} cartas</p>
             </div>
             <button type="button" className={ghost} onClick={() => setD(structuredClone(t))}>Editar</button>
-            <button type="button" className={danger} disabled={busy} onClick={() => remove(t)} aria-label={`Excluir ${t.name}`}>✕</button>
+            <HoldButton className={danger} disabled={busy} onConfirm={() => remove(t)} label={`Excluir ${t.name} e suas ${players.filter((p) => p.teamId === t.id).length} cartas`}>✕</HoldButton>
           </motion.div>
         ))}
       </div>
