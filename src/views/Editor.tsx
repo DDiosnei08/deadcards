@@ -15,6 +15,7 @@ const SECTIONS = [
   { id: "teams", label: "Times" },
   { id: "heroes", label: "Heróis" },
   { id: "look", label: "Aparência" },
+  { id: "codes", label: "Códigos" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["id"];
 
@@ -108,6 +109,7 @@ export function Editor({ editId, onEditId }: { editId: string | null; onEditId: 
           {section === "teams" && <TeamsForm />}
           {section === "heroes" && <HeroesForm />}
           {section === "look" && <LookForm />}
+          {section === "codes" && <CodesForm />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -491,6 +493,151 @@ function LookForm() {
           {busy ? "Salvando…" : "Salvar aparência"}
         </button>
         <Toast msg={msg} />
+      </div>
+    </div>
+  );
+}
+
+type Code = { code: string; player_id: string; max_uses: number; uses: number; starts_at: number | null; expires_at: number | null };
+
+const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const randomCode = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => ALPHABET[b % ALPHABET.length]).join("");
+const toTs = (v: string) => (v ? Math.floor(new Date(v).getTime() / 1000) : null);
+const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+const fmtTs = (ts: number | null) => (ts ? new Date(ts * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "sem limite");
+
+function codeStatus(c: Code, now: number) {
+  if (c.uses >= c.max_uses) return { label: "esgotado", cls: "text-zinc-400" };
+  if (c.expires_at && c.expires_at <= now) return { label: "expirado", cls: "text-red-300" };
+  if (c.starts_at && c.starts_at > now) return { label: "agendado", cls: "text-amber-300" };
+  return { label: "ativo", cls: "text-emerald-300" };
+}
+
+function CodesForm() {
+  const { players, teams } = useData();
+  const [codes, setCodes] = useState<Code[]>([]);
+  const [code, setCode] = useState(randomCode);
+  const [pick, setPick] = useState("");
+  const [maxUses, setMaxUses] = useState(1);
+  const [startsAt, setStartsAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const label = (p: Player) => `${p.name} · ${p.hero} · ${teams.find((t) => t.id === p.teamId)?.tag ?? ""}`;
+  const byLabel = new Map(players.map((p) => [label(p), p.id]));
+  const nameOf = (id: string) => players.find((p) => p.id === id)?.name ?? id;
+
+  const load = () =>
+    fetch("/api/codes")
+      .then((r) => (r.ok ? (r.json() as Promise<Code[]>) : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(setCodes)
+      .catch((e: Error) => setMsg(`Erro: ${e.message}`));
+
+  useEffect(() => { load(); }, []);
+
+  const expireIn = (ms: number | null) => setExpiresAt(ms === null ? "" : localInput(new Date(Date.now() + ms)));
+
+  const create = async () => {
+    const playerId = byLabel.get(pick);
+    if (!playerId) return setMsg("Erro: escolha uma carta da lista");
+    setBusy(true);
+    setMsg("");
+    try {
+      await api.createCode({ code, playerId, maxUses, startsAt: toTs(startsAt), expiresAt: toTs(expiresAt) });
+      setMsg(`Código ${code} criado`);
+      setCode(randomCode());
+      await load();
+    } catch (e) {
+      setMsg(`Erro: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (c: string) => {
+    if (!confirm(`Apagar o código ${c}?`)) return;
+    try {
+      await api.removeCode(c);
+      await load();
+    } catch (e) {
+      setMsg(`Erro: ${(e as Error).message}`);
+    }
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const quick = "px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider border border-zinc-200/20 text-zinc-300 hover:text-white bg-zinc-900/60 cursor-pointer";
+
+  return (
+    <div className="space-y-6">
+      <div className="noir-glass rounded-3xl p-5 sm:p-7 space-y-6">
+        <div>
+          <h2 className="text-lg font-extrabold uppercase tracking-[0.12em] text-zinc-100">Novo código</h2>
+          <p className="text-xs text-zinc-400 mt-1">Quem digitar o código na aba Resgatar ganha a carta escolhida.</p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="1. Código">
+            <div className="flex gap-2">
+              <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className={`${input} tracking-[0.15em] font-bold`} />
+              <button type="button" onClick={() => setCode(randomCode())} className={ghost}>Gerar</button>
+            </div>
+          </Field>
+
+          <Field label="2. Carta">
+            <input list="codes-players" value={pick} onChange={(e) => setPick(e.target.value)} placeholder="Digite o nome do jogador…" className={input} />
+            <datalist id="codes-players">
+              {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((p) => <option key={p.id} value={label(p)} />)}
+            </datalist>
+          </Field>
+
+          <Field label="3. Quantas pessoas podem resgatar">
+            <div className="flex items-center gap-2">
+              <input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(Number(e.target.value))} className={`${input} w-28`} />
+              {[1, 10, 100].map((n) => <button key={n} type="button" onClick={() => setMaxUses(n)} className={quick}>{n}</button>)}
+            </div>
+          </Field>
+
+          <Field label="4. Validade">
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => expireIn(null)} className={quick}>Sem prazo</button>
+              <button type="button" onClick={() => expireIn(3600000)} className={quick}>1 hora</button>
+              <button type="button" onClick={() => expireIn(86400000)} className={quick}>1 dia</button>
+              <button type="button" onClick={() => expireIn(7 * 86400000)} className={quick}>7 dias</button>
+            </div>
+          </Field>
+
+          <Field label="Começa em (opcional)">
+            <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className={input} />
+          </Field>
+
+          <Field label="Expira em (opcional)">
+            <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className={input} />
+          </Field>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <button type="button" onClick={create} disabled={busy || !code || !pick} className={primary}>{busy ? "Criando…" : "Criar código"}</button>
+          <Toast msg={msg} />
+        </div>
+      </div>
+
+      <div className="noir-glass rounded-3xl p-5 sm:p-7 space-y-3">
+        <h2 className="text-lg font-extrabold uppercase tracking-[0.12em] text-zinc-100">Códigos criados</h2>
+        {codes.length === 0 && <p className="text-xs text-zinc-400">Nenhum código ainda.</p>}
+        {codes.map((c) => {
+          const st = codeStatus(c, now);
+          return (
+            <div key={c.code} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 rounded-2xl bg-zinc-900/60 border border-zinc-200/10 text-xs text-zinc-200">
+              <span className="font-extrabold tracking-[0.15em] text-zinc-100">{c.code}</span>
+              <span className="truncate max-w-48">{nameOf(c.player_id)}</span>
+              <span>{c.uses}/{c.max_uses} usos</span>
+              <span className="text-zinc-400">{fmtTs(c.starts_at)} → {fmtTs(c.expires_at)}</span>
+              <span className={`font-bold uppercase tracking-wider ${st.cls}`}>{st.label}</span>
+              <button type="button" onClick={() => remove(c.code)} className="ml-auto px-3 py-1.5 rounded-lg text-red-300 hover:bg-red-950/40 cursor-pointer">Apagar</button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
