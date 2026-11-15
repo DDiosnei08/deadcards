@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "deadcards",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "deadcards",
+      "database_id": "ef36d045-1946-4cf8-a4f3-37f6103335aa",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ASSETS_BUCKET",
+      "bucket_name": "deadcards-assets"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  },
+  "vars": {
+    "DEADLOCK_API_BASE": "https://api.deadlock-api.com"
+  }
+}
