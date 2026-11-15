@@ -22,7 +22,8 @@ const ID_RE = /^[\w-]{1,64}$/;
 
 const keyOf = (url: unknown) => (typeof url === "string" && url.startsWith("/img/") ? url.slice(5) : null);
 const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
-const bad = (msg: string, status = 400) => Response.json({ error: msg }, { status });
+// `code` é opcional: rotas que o front traduz mandam um código estável além da mensagem em pt.
+const bad = (msg: string, status = 400, code?: string) => Response.json({ error: msg, code }, { status });
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 const ALLOWED_PATHS = ["/v1/assets/heroes", "/v1/analytics/hero-stats", "/v1/patches"];
@@ -159,20 +160,20 @@ const INVALID_CODE = "código inválido, expirado ou esgotado";
 
 async function redeem(env: Env, request: Request): Promise<Response> {
   const user = await currentUser(env, request);
-  if (!user) return bad("entre para resgatar", 401);
+  if (!user) return bad("entre para resgatar", 401, "login");
   const body = (await request.json().catch(() => null)) as { code?: unknown } | null;
   const code = typeof body?.code === "string" ? body.code.trim().toUpperCase() : "";
-  if (!code) return bad("código vazio");
+  if (!code) return bad("código vazio", 400, "empty");
   const row = await env.DB.prepare(`SELECT player_id FROM redeem_codes WHERE code = ? AND ${CODE_VALID}`).bind(code).first<{ player_id: string }>();
-  if (!row) return bad(INVALID_CODE, 404);
+  if (!row) return bad(INVALID_CODE, 404, "invalid");
   try {
     const [, consume] = await env.DB.batch([
       env.DB.prepare(`INSERT INTO user_cards (user_id, player_id) SELECT ?, player_id FROM redeem_codes WHERE code = ? AND ${CODE_VALID}`).bind(user.id, code),
       env.DB.prepare(`UPDATE redeem_codes SET uses = uses + 1 WHERE code = ? AND ${CODE_VALID}`).bind(code),
     ]);
-    if (!consume.meta.changes) return bad(INVALID_CODE, 404);
+    if (!consume.meta.changes) return bad(INVALID_CODE, 404, "invalid");
   } catch (e) {
-    if (String(e).includes("UNIQUE")) return bad("essa carta já está na sua coleção", 409);
+    if (String(e).includes("UNIQUE")) return bad("essa carta já está na sua coleção", 409, "owned");
     throw e;
   }
   return Response.json({ playerId: row.player_id });
