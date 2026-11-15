@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 export const LANGS = ["pt", "en", "es"] as const;
 export type Lang = (typeof LANGS)[number];
@@ -24,6 +24,7 @@ const LangContext = createContext<Ctx>({ lang: "pt", setLang: () => {} });
 // Ordem: escolha salva no cookie > país do IP (Cloudflare) > idioma do navegador > inglês.
 export function LangProvider({ children }: { children: ReactNode }) {
   const saved = readCookie();
+  const picked = useRef(false);
   const [lang, setLangState] = useState<Lang>(isLang(saved) ? saved : fromBrowser);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     fetch("/api/locale")
       .then((r) => (r.ok ? (r.json() as Promise<{ country?: string }>) : {}))
       .then(({ country }: { country?: string }) => {
+        if (picked.current) return;
         const l = fromCountry(country) ?? fromBrowser();
         writeCookie(l);
         setLangState(l);
@@ -40,7 +42,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { document.documentElement.lang = HTML_LANG[lang]; }, [lang]);
 
-  const setLang = (l: Lang) => { writeCookie(l); setLangState(l); };
+  const setLang = (l: Lang) => { picked.current = true; writeCookie(l); setLangState(l); };
   return <LangContext.Provider value={{ lang, setLang }}>{children}</LangContext.Provider>;
 }
 
