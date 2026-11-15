@@ -1,0 +1,23 @@
+name: Ideia / feature
+description: Sugira algo novo para o site
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema isso resolve?
+      description: Conte o contexto antes da solução.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Como você imagina?
+      description: Referências visuais ajudam muito.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options: [Cartas, Times, Tier List, Coleção, Editor, Login, Outro]

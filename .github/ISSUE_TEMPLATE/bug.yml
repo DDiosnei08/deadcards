@@ -1,0 +1,30 @@
+name: Bug
+description: Algo quebrado ou se comportando errado
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema e o que você esperava.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abra a aba Times
+        2. Clique em ...
+        3. Veja o erro
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Navegador e dispositivo
+      placeholder: Chrome 140, Windows / Safari, iPhone
+  - type: textarea
+    id: media
+    attributes:
+      label: Prints ou vídeo
