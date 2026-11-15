@@ -12,6 +12,7 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
+import { Feedback } from "./views/Feedback";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -23,8 +24,8 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms";
-const TABS: { id: Exclude<Tab, "home" | "privacy" | "terms">; label: string }[] = [
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback";
+const TABS: { id: Exclude<Tab, "home" | "privacy" | "terms" | "feedback">; label: string }[] = [
   { id: "teams", label: "Times" },
   { id: "tierlist", label: "Tier List" },
   { id: "collection", label: "Coleção" },
@@ -115,6 +116,7 @@ function Shell() {
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
+            {tab === "feedback" && <Feedback />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -125,8 +127,7 @@ function Shell() {
             <GitHubIcon /> Código aberto no GitHub
           </a>
           <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Links do projeto">
-            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Relatar problema</a>
-            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Sugerir ideia</a>
+            <button type="button" onClick={() => setTab("feedback")} className="hover:text-white cursor-pointer">Relatar problema / sugerir ideia</button>
             <a href={`${REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" className="hover:text-white">Como contribuir</a>
             <button type="button" onClick={() => setTab("privacy")} className="hover:text-white cursor-pointer">Privacidade</button>
             <button type="button" onClick={() => setTab("terms")} className="hover:text-white cursor-pointer">Termos</button>
