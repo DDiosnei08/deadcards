@@ -8,6 +8,7 @@ import { TierList } from "./views/TierList";
 import { Collection } from "./views/Collection";
 import { Spotlight } from "./components/Spotlight";
 import { Login } from "./views/Login";
+import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 
 type Tab = "home" | "teams" | "tierlist" | "collection" | "editor";
@@ -60,7 +61,7 @@ function Shell() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
           <button type="button" onClick={() => setTab("home")} className="brand-badge px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl flex items-center gap-3 text-left">
             <span className="w-2.5 h-2.5 rounded-full bg-zinc-100 shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
-            <span className="text-base sm:text-xl font-extrabold uppercase tracking-[0.18em] text-zinc-100">Deadlock Cards</span>
+            <span className="text-base sm:text-xl font-extrabold uppercase tracking-[0.18em] text-zinc-100"><span className="sm:hidden">DC</span><span className="hidden sm:inline">Deadlock Cards</span></span>
           </button>
           <nav className="relative flex items-center gap-1.5 sm:gap-2.5" aria-label="Navegação principal">
             {tabs.map((t) => (
@@ -77,6 +78,7 @@ function Shell() {
                 <span className="relative">{t.label}</span>
               </button>
             ))}
+            <Account />
           </nav>
         </div>
       </header>
