@@ -3,3 +3,5 @@ dist
 .wrangler
 .dev.vars
 *.tsbuildinfo
+.claude/
+skills-lock.json
