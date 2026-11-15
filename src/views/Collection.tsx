@@ -12,14 +12,16 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
   const [q, setQ] = useState("");
   const [team, setTeam] = useState("ALL");
   const [hero, setHero] = useState("ALL");
+  const [role, setRole] = useState("ALL");
   const [sort, setSort] = useState<SortKey>("ovr");
   const [allVersions, setAllVersions] = useState(false);
   const [limit, setLimit] = useState(PAGE);
   const query = useDeferredValue(q.trim().toLowerCase());
 
   const heroes = [...new Set(players.map((p) => p.hero))].sort();
+  const roles = [...new Set(players.map((p) => p.position))].sort();
   const list = players
-    .filter((p) => (allVersions || isMainCard(p)) && (team === "ALL" || p.teamId === team) && (hero === "ALL" || p.hero === hero))
+    .filter((p) => (allVersions || isMainCard(p)) && (team === "ALL" || p.teamId === team) && (hero === "ALL" || p.hero === hero) && (role === "ALL" || p.position === role))
     .filter((p) => !query || `${p.name} ${p.hero} ${p.position} ${teamOf(teams, p).name}`.toLowerCase().includes(query))
     .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : sort === "ovr" ? getPlayerOvr(b) - getPlayerOvr(a) : b.stats[sort] - a.stats[sort]));
 
@@ -41,6 +43,10 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
           <select value={hero} onChange={(e) => setHero(e.target.value)} aria-label="Herói" className={field}>
             <option value="ALL">Todos os heróis</option>
             {heroes.map((h) => <option key={h} value={h}>{h}</option>)}
+          </select>
+          <select value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role" className={field}>
+            <option value="ALL">Todas as roles</option>
+            {roles.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className={field}>
             <option value="ovr">Ordenar: OVR</option>
