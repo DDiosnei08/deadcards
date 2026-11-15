@@ -3,6 +3,7 @@ import { createAuthClient } from "better-auth/client";
 import { useEffect, useRef, useState } from "react";
 import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
+import { primaryBtn } from "../lib/ui";
 
 const auth = createAuthClient();
 
@@ -45,7 +46,7 @@ export function Account() {
         href="/login"
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
-        className="flex cursor-pointer items-center gap-2 rounded-xl bg-zinc-100 px-3 py-2 text-xs font-bold tracking-wider text-zinc-950 uppercase shadow-[0_0_18px_rgba(244,244,245,0.35)] hover:bg-white sm:px-4 sm:py-2.5 sm:text-sm"
+        className={`${primaryBtn} shadow-[0_0_18px_rgba(255,239,215,0.35)] sm:min-h-10`}
         aria-label={t.signIn}
       >
         <span>{t.signIn}</span>
@@ -61,7 +62,7 @@ export function Account() {
         whileTap={{ scale: 0.95 }}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex cursor-pointer items-center gap-2 rounded-full border border-zinc-200/25 bg-zinc-900/70 p-1 shadow-[0_0_14px_rgba(244,244,245,0.15)] hover:border-zinc-200/60 sm:pr-3"
+        className="flex cursor-pointer items-center gap-2 rounded-full border border-zinc-200/25 bg-zinc-900/70 p-1 shadow-[0_0_14px_rgba(244,244,245,0.15)] hover:border-zinc-200/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:pr-3"
       >
         {me.image ? <img src={me.image} alt="" className="size-8 rounded-full" /> : <span className="flex size-8 items-center justify-center rounded-full bg-zinc-700 text-sm font-bold text-white">{me.name.charAt(0).toUpperCase()}</span>}
         <span className="hidden max-w-32 truncate text-sm font-bold text-zinc-100 sm:inline">{me.name}</span>

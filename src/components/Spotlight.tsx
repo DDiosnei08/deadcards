@@ -8,6 +8,8 @@ import { getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf, use
 import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
 import { TrendBadge } from "./TrendBadge";
+import { Icon } from "./Icon";
+import { pill } from "../lib/ui";
 
 gsap.registerPlugin(SplitText);
 const revealed = new Set<string>();
@@ -80,14 +82,14 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
       aria-label={t.cardOf(player.name)}
     >
       <motion.div
-        className="noir-glass-strong flex max-h-[92dvh] w-full max-w-4xl flex-col items-center gap-8 overflow-y-auto rounded-3xl p-5 sm:p-8 md:flex-row md:items-start"
+        className="noir-glass-strong flex max-h-[92dvh] w-full max-w-4xl flex-col items-center gap-8 overflow-y-auto rounded-3xl p-4 sm:p-8 md:flex-row md:items-start"
         initial={{ scale: 0.8, y: 30, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.9, y: 20, opacity: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <motion.div key={player.id} className="relative" initial={reveal ? false : { rotateY: -90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ transformPerspective: 1200 }}>
+        <motion.div key={player.id} className="relative max-w-full" initial={reveal ? false : { rotateY: -90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ transformPerspective: 1200 }}>
           {reveal && (
             <div ref={flashRef} aria-hidden="true" className="pointer-events-none absolute -inset-16 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${tier.hi} 0%, ${tier.c}99 30%, transparent 68%)` }} />
           )}
@@ -99,36 +101,36 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
         <div className="w-full min-w-0 flex-1 space-y-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-black tracking-[0.12em] text-white uppercase"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
-              <p className="mt-1 text-sm text-zinc-300">{label(team.name)} ({team.tag}) • {label(player.position || "Flex")} • {player.hero}</p>
+              <h2 className="font-display text-3xl font-black tracking-[0.12em] text-dl-text uppercase"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
+              <p className="mt-1 text-sm text-zinc-300">{label(team.name)} ({team.tag}) · {label(player.position || "Flex")} · {player.hero}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label={t.close} className="size-9 cursor-pointer rounded-full border border-zinc-200/20 bg-zinc-900/80 text-zinc-300 hover:text-white">✕</button>
+            <button type="button" onClick={onClose} aria-label={t.close} className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-800/60 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:size-9"><Icon name="x" /></button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? t.special : tier.name}</span>
             <TrendBadge delta={getPlayerTrend(player)} size="editor" />
-            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto cursor-pointer rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-bold tracking-wider text-zinc-950 uppercase hover:bg-white">{t.edit}</button>}
+            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className={`${pill(true)} ml-auto hover:bg-white`}>{t.edit}</button>}
             {player.special && player.specialText && <span className="text-xs font-bold text-amber-200">✦ {player.specialText}</span>}
           </div>
 
           <div>
-            <h3 className="mb-2 text-[11px] font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.history}</h3>
+            <h3 className="mb-2 text-xs font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.history}</h3>
             <HistoryChart points={history} color={tier.c} />
           </div>
 
           {versions.length > 1 && (
             <div>
-              <h3 className="mb-2 text-[11px] font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.versions} ({versions.length})</h3>
+              <h3 className="mb-2 text-xs font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.versions} ({versions.length})</h3>
               <div className="flex flex-wrap gap-2">
                 {versions.map((v) => (
                   <button
                     key={v.id}
                     type="button"
                     onClick={() => onSwitch(v.id)}
-                    className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-bold ${v.id === player.id ? "border-white bg-zinc-100 text-zinc-950" : "border-zinc-200/15 bg-zinc-900/70 text-zinc-300 hover:text-white"}`}
+                    className={pill(v.id === player.id)}
                   >
-                    {isMainCard(v) ? t.main : v.special ? t.special : t.version} • {teamOf(teams, v).tag}
+                    {isMainCard(v) ? t.main : v.special ? t.special : t.version} · {teamOf(teams, v).tag}
                   </button>
                 ))}
               </div>
@@ -147,7 +149,7 @@ function HistoryChart({ points, color }: { points: { date: string; ovr: number }
     const d = new Date(iso);
     return isNaN(+d) ? iso : d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", timeZone: "UTC" });
   };
-  const W = 420, H = 140, P = 24;
+  const W = 420, H = 160, P = 32;
   const vals = points.map((p) => p.ovr);
   const min = Math.min(...vals) - 2, max = Math.max(...vals) + 2;
   const x = (i: number) => (points.length === 1 ? W / 2 : P + (i * (W - 2 * P)) / (points.length - 1));
@@ -159,8 +161,8 @@ function HistoryChart({ points, color }: { points: { date: string; ovr: number }
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={x(i)} cy={y(p.ovr)} r="4" fill="#09090b" stroke={color} strokeWidth="2" />
-          <text x={x(i)} y={y(p.ovr) - 9} textAnchor="middle" fontSize="11" fontWeight="800" fill="#f4f4f5">{p.ovr}</text>
-          <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="#a1a1aa">{short(p.date)}</text>
+          <text x={x(i)} y={y(p.ovr) - 12} textAnchor="middle" fontSize="16" fontWeight="800" fill="#f4f4f5">{p.ovr}</text>
+          <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="15" fill="#a1a1aa">{short(p.date)}</text>
         </g>
       ))}
     </svg>

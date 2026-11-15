@@ -14,6 +14,7 @@ import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
 import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } from "./lib/i18n";
 import { Feedback } from "./views/Feedback";
+import { Icon } from "./components/Icon";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -158,7 +159,7 @@ function LangMenu() {
         aria-label={t.language}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-200/15 bg-zinc-900/60 p-2 text-xs font-semibold tracking-wider text-zinc-300 uppercase hover:text-white sm:px-3 sm:py-2.5 sm:text-sm"
+        className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-black/50 bg-linear-to-b from-dl-bevel-from to-dl-bevel-to px-3 text-xs font-bold tracking-widest text-white uppercase text-shadow-xs hover:from-dl-bevel-hover-from hover:to-dl-bevel-hover-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:min-h-10 sm:text-sm"
       >
         <Flag lang={lang} />
         <span className="hidden sm:inline">{lang}</span>
@@ -247,6 +248,7 @@ function Shell() {
   const tabs = me?.admin ? [...TABS, "editor" as const] : TABS;
   const openTeam = (id: string) => { setFocusTeam(id); setTab("teams"); };
   const editCard = (id: string) => { setSpotlight(null); setEditId(id); setTab("editor"); };
+  useEffect(() => { window.scrollTo(0, 0); }, [tab]);
 
   return (
     <>
@@ -255,20 +257,20 @@ function Shell() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 lg:px-8">
           <button type="button" onClick={() => setTab("home")} className="brand-badge flex shrink-0 items-center gap-3 rounded-xl px-4 py-2.5 text-left sm:px-6 sm:py-3">
             <span className="size-2.5 rounded-full bg-zinc-100 shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
-            <span className="text-base font-extrabold tracking-[0.18em] text-zinc-100 uppercase sm:text-xl"><span className="sm:hidden">DC</span><span className="hidden sm:inline">Deadlock Cards</span></span>
+            <span className="font-display text-base font-extrabold tracking-[0.18em] text-zinc-100 uppercase sm:text-xl"><span className="sm:hidden">DC</span><span className="hidden sm:inline">Deadlock Cards</span></span>
           </button>
-          <nav className="relative ml-auto flex min-w-0 scrollbar-none items-center gap-1.5 overflow-x-auto py-1 sm:gap-2.5" aria-label={t.mainNav}>
+          <nav className="relative ml-auto flex min-w-0 scrollbar-none items-center gap-2 overflow-x-auto mask-x-from-[calc(100%-1.5rem)] px-6 py-1" aria-label={t.mainNav}>
             {tabs.map((id) => (
               <button
                 key={id}
                 type="button"
-                onClick={() => { setFocusTeam(undefined); setTab(id); }}
+                onClick={(e) => { setFocusTeam(undefined); setTab(id); e.currentTarget.scrollIntoView({ inline: "nearest", block: "nearest" }); }}
                 aria-current={tab === id ? "page" : undefined}
-                className={`relative shrink-0 cursor-pointer rounded-xl border px-3 py-2 text-xs font-semibold tracking-wider whitespace-nowrap uppercase transition-colors sm:px-4 sm:py-2.5 sm:text-sm ${
-                  tab === id ? "border-white text-zinc-950" : "border-zinc-200/15 bg-zinc-900/60 text-zinc-300 hover:text-white"
+                className={`relative flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg border px-3 text-xs font-bold tracking-widest whitespace-nowrap uppercase focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-zinc-100 sm:min-h-10 sm:px-4 sm:text-sm ${
+                  tab === id ? "border-dl-text text-dl-black" : "border-black/50 bg-linear-to-b from-dl-bevel-from to-dl-bevel-to text-white text-shadow-xs hover:from-dl-bevel-hover-from hover:to-dl-bevel-hover-to"
                 }`}
               >
-                {tab === id && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-xl bg-zinc-100 shadow-[0_0_18px_rgba(244,244,245,0.35)]" transition={{ type: "spring", stiffness: 380, damping: 30 }} />}
+                {tab === id && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-lg bg-dl-text shadow-[0_0_18px_rgba(255,239,215,0.35)]" transition={{ type: "spring", stiffness: 380, damping: 30 }} />}
                 <span className="relative">{t.tabs[id]}</span>
               </button>
             ))}
@@ -338,7 +340,7 @@ function ReducedMotionNotice() {
     <div role="status" className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="flex items-start gap-3 rounded-xl border border-zinc-200/15 bg-zinc-900/80 px-4 py-3 text-xs text-zinc-300">
         <p className="flex-1">{t.rmBefore}<strong>{t.rmBold}</strong>{t.rmAfter}</p>
-        <button type="button" onClick={close} aria-label={t.rmClose} className="shrink-0 cursor-pointer text-zinc-400 hover:text-white">✕</button>
+        <button type="button" onClick={close} aria-label={t.rmClose} className="shrink-0 cursor-pointer text-zinc-400 hover:text-white"><Icon name="x" /></button>
       </div>
     </div>
   );
