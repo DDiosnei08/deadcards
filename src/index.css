@@ -1,5 +1,13 @@
 @import "tailwindcss";
+@import "./styles/cards.css";
 
-@theme {
-  --font-display: "VALVE Oracle", sans-serif;
+@font-face {
+  font-family: 'VALVE Oracle';
+  src: local('VALVE Oracle'), local('VALVE Oracle SemiBold');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+*, *::before, *::after {
+  font-family: 'VALVE Oracle', ui-sans-serif, system-ui, sans-serif;
 }

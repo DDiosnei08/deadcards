@@ -1,0 +1,150 @@
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import type { CSSProperties, PointerEvent } from "react";
+import type { Player } from "../lib/types";
+import { getPlayerOvr, getPlayerTrend, hexToRgba, teamOf } from "../lib/cards";
+import { getCardTier, ornamentSVG, particleSpecs, rarityStyleVars, ringSVG } from "../lib/rarity";
+import { useData } from "../lib/data";
+import { TeamLogo } from "./TeamLogo";
+import { TrendBadge } from "./TrendBadge";
+
+type Variant = "team" | "medium" | "editor";
+
+const STAT_ORDER = ["MIR", "MOV", "MAC", "POL", "SUP", "CON"] as const;
+
+export function Card({ player, variant = "team", onOpen }: { player: Player; variant?: Variant; onOpen?: () => void }) {
+  const { teams, settings, heroArt } = useData();
+  const team = teamOf(teams, player);
+  const ovr = getPlayerOvr(player);
+  const rk = getCardTier(player, settings.tierConfig!);
+  const medium = variant === "medium";
+  const editor = variant === "editor";
+  const art = player.art?.url ? { url: player.art.url, zoom: player.art.zoom ?? 100, x: player.art.x ?? 50, y: player.art.y ?? 50 } : heroArt(player.hero);
+
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const rotateX = useSpring(useTransform(ry, [-0.5, 0.5], [9, -9]), { stiffness: 220, damping: 18 });
+  const rotateY = useSpring(useTransform(rx, [-0.5, 0.5], [-11, 11]), { stiffness: 220, damping: 18 });
+  const onMove = (e: PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    rx.set((e.clientX - r.left) / r.width - 0.5);
+    ry.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const onLeave = () => { rx.set(0); ry.set(0); };
+
+  const sizeClass = editor ? "card-size-editor" : medium ? "card-size-team-medium" : "card-size-team";
+  const topPad = rk.custom ? rk.topPad || undefined : rk.lvl >= 3 ? 26 : undefined;
+  const footerSize = Number.isFinite(Number(player.footerSize)) ? Number(player.footerSize) : 12;
+  const footerColor = /^#[0-9a-f]{6}$/i.test(String(player.footerColor)) ? player.footerColor : "#f4f4f5";
+
+  return (
+    <motion.div
+      className={`rk-wrap${player.special ? " sp-card" : ""}`}
+      data-rarity={rk.key}
+      style={{ ...(rarityStyleVars(rk) as CSSProperties), rotateX, rotateY, transformPerspective: 900 }}
+      onPointerMove={onMove}
+      onPointerLeave={onLeave}
+    >
+      <div className={`deadlock-card-shell ${sizeClass} group select-none`}>
+        <div className="deadlock-card-inner flex flex-col justify-between p-4 sm:p-5" style={topPad ? { paddingTop: topPad } : undefined}>
+          {art ? (
+            <div className="hero-bg-wrap absolute inset-0 overflow-hidden pointer-events-none">
+              <img
+                src={art.url}
+                alt={player.hero}
+                draggable={false}
+                style={{
+                  position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover",
+                  objectPosition: `${art.x}% ${art.y}%`, transform: `scale(${art.zoom / 100})`, transformOrigin: `${art.x}% ${art.y}%`,
+                  filter: "contrast(1.08) saturate(1.12)", userSelect: "none",
+                }}
+              />
+            </div>
+          ) : (
+            <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 50% 30%, #3f3f46 0%, #09090b 100%)" }} />
+          )}
+
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: `linear-gradient(180deg, ${hexToRgba(player.c2, 0)} 52%, ${hexToRgba(player.c2, 0.5)} 80%, rgba(9, 9, 11, 0.78) 100%)` }}
+          />
+          {rk.custom ? (
+            <svg className="fr-orn" aria-hidden="true" viewBox="0 0 295 430" preserveAspectRatio="none" dangerouslySetInnerHTML={{ __html: ornamentSVG(rk) }} />
+          ) : (
+            <svg className={`rk-ring${rk.lvl >= 3 ? " rk-ring-pulse" : ""}`} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ringSVG(rk) }} />
+          )}
+          {(rk.custom ? rk.glint : rk.lvl >= 3) && <div className="rk-glint" />}
+          <Particles tierKey={rk} />
+          {player.special && !rk.noSweep && <div className="sp-card-fx" />}
+
+          <div className="relative z-10 flex items-start justify-between gap-2">
+            <div className="flex flex-col items-start">
+              <div className="flex items-center gap-1.5">
+                <span className={`${editor ? "text-6xl" : medium ? "text-4xl" : "text-5xl"} font-black leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]`}>{ovr}</span>
+                <TrendBadge delta={getPlayerTrend(player)} size={editor ? "editor" : "card"} />
+              </div>
+              <span className="mt-1.5 px-2 py-0.5 rounded bg-black/65 border border-white/25 text-[10px] font-extrabold uppercase tracking-widest text-zinc-100">
+                {player.position || "Flex"}
+              </span>
+              {team.logo ? (
+                <span className="team-logo-frame mt-1.5" title={team.name} style={{ width: editor ? 48 : 40, height: editor ? 48 : 40, borderRadius: 8 }}>
+                  <TeamLogo team={team} />
+                </span>
+              ) : (
+                <span className="mt-1.5 px-2 py-0.5 rounded bg-white/20 border border-white/35 text-[10px] font-black uppercase tracking-widest text-white">{team.tag || "FA"}</span>
+              )}
+            </div>
+          </div>
+
+          <div className={`relative z-10 mt-auto ${medium ? "pb-5" : editor ? "pb-9" : "pb-8"}`}>
+            <div className={`text-center pb-1.5 mb-2 border-b border-zinc-200/45 ${medium ? "" : "mx-2"}`}>
+              <h3 className={`${editor ? "text-2xl" : medium ? "text-lg" : "text-xl"} font-black uppercase tracking-[0.12em] text-white truncate drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`}>
+                {player.name}
+              </h3>
+            </div>
+            {!medium && (
+              <div className={`grid grid-cols-2 gap-x-5 ${editor ? "px-5" : "px-4"} gap-y-1.5 py-1 card-txt-shadow`}>
+                {STAT_ORDER.map((k) => (
+                  <div key={k} className="flex items-center justify-between leading-none">
+                    <span className={`${editor ? "text-base" : "text-sm"} font-extrabold tracking-wider text-zinc-200`}>{k}</span>
+                    <span className={`${editor ? "text-xl" : "text-lg"} font-black text-white`}>{player.stats[k]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div
+              className={`text-center ${medium ? "mt-2" : "mt-3"} font-black uppercase leading-tight`}
+              style={{ fontSize: medium ? Math.round(footerSize * 0.85) : footerSize, letterSpacing: "0.2em", color: footerColor, textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
+            >
+              {player.footer ?? "Deadlock Cards"}
+            </div>
+          </div>
+
+          {onOpen && (
+            <button type="button" className="card-hover-overlay border-0" onClick={onOpen} aria-label={`Visualizar carta de ${player.name}`}>
+              <span className={`card-hover-cta w-full ${medium ? "max-w-[170px]" : "max-w-[215px]"} py-2.5 px-4 rounded-xl bg-zinc-100 text-zinc-950 text-xs font-extrabold uppercase tracking-wider shadow-[0_0_24px_rgba(255,255,255,0.4)]`}>
+                Visualizar Carta
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function Particles({ tierKey }: { tierKey: ReturnType<typeof getCardTier> }) {
+  const specs = particleSpecs(tierKey);
+  if (!specs.length) return null;
+  const f = (n: number) => n.toFixed(2);
+  return (
+    <div className="rk-particles" aria-hidden="true">
+      {specs.map((sp, i) => (
+        <span
+          key={i}
+          className={sp.type === "rise" ? "rk-p" : sp.type === "twinkle" ? "rk-tw" : "rk-streak"}
+          style={{ "--x": `${f(sp.x)}%`, "--y": `${f(sp.y)}%`, "--s": `${f(sp.s)}px`, "--d": `${f(sp.d)}s`, "--dl": `${f(sp.dl)}s`, "--dx": `${f(sp.dx)}px`, "--po": f(sp.po), "--pc": sp.color } as CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
