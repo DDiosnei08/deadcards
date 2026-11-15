@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { createAuthClient } from "better-auth/client";
 import { useEffect, useRef, useState } from "react";
 import { useData } from "../lib/data";
+import { strings, useT } from "../lib/i18n";
 
 const auth = createAuthClient();
 
@@ -16,7 +17,14 @@ export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+const S = strings({
+  pt: { signIn: "Entrar", signOut: "Sair" },
+  en: { signIn: "Sign in", signOut: "Sign out" },
+  es: { signIn: "Ingresar", signOut: "Salir" },
+});
+
 export function Account() {
+  const t = useT(S);
   const { me } = useData();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,9 +46,9 @@ export function Account() {
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
         className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 bg-zinc-100 hover:bg-white shadow-[0_0_18px_rgba(244,244,245,0.35)] cursor-pointer"
-        aria-label="Entrar"
+        aria-label={t.signIn}
       >
-        <span>Entrar</span>
+        <span>{t.signIn}</span>
       </motion.a>
     );
   }
@@ -77,7 +85,7 @@ export function Account() {
               onClick={() => auth.signOut().then(() => location.assign("/"))}
               className="w-full text-left px-2 py-2 rounded-lg text-sm text-zinc-300 hover:text-white hover:bg-zinc-800/70 cursor-pointer"
             >
-              Sair
+              {t.signOut}
             </button>
           </motion.div>
         )}
