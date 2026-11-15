@@ -86,12 +86,12 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
 
   return (
     <section className="space-y-5">
-      <div className="noir-glass rounded-2xl p-5 sm:p-7 space-y-4">
+      <div className="noir-glass space-y-4 rounded-2xl p-5 sm:p-7">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.11em] text-zinc-100">{t.title}</h1>
-          <p className="text-xs text-zinc-400 mt-1.5">{t.count(list.length)}</p>
+          <h1 className="text-2xl font-extrabold tracking-[0.11em] text-zinc-100 uppercase sm:text-3xl">{t.title}</h1>
+          <p className="mt-1.5 text-xs text-zinc-400">{t.count(list.length)}</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchPlaceholder} aria-label={t.search} className={`${field} w-60 placeholder:text-zinc-500`} />
           <select value={team} onChange={(e) => setTeam(e.target.value)} aria-label={t.team} className={field}>
             <option value="ALL">{t.allTeams}</option>
@@ -110,14 +110,14 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
             <option value="name">{t.sortBy(t.name)}</option>
             {(["MIR", "MAC", "SUP", "MOV", "POL", "CON"] as const).map((k) => <option key={k} value={k}>{t.sortBy(k)}</option>)}
           </select>
-          <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-300">
             <input type="checkbox" checked={allVersions} onChange={(e) => setAllVersions(e.target.checked)} />
             {t.allVersions}
           </label>
         </div>
       </div>
 
-      <motion.div layout className="flex flex-wrap justify-center sm:justify-start gap-6">
+      <motion.div layout className="flex flex-wrap justify-center gap-6 sm:justify-start">
         <AnimatePresence mode="popLayout">
           {list.slice(0, limit).map((p) => (
             <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.3 }}>
@@ -128,7 +128,7 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
       </motion.div>
       {list.length > limit && (
         <div className="text-center">
-          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="px-5 py-2.5 rounded-xl bg-zinc-100 text-zinc-950 text-xs font-extrabold uppercase tracking-wider cursor-pointer">
+          <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="cursor-pointer rounded-xl bg-zinc-100 px-5 py-2.5 text-xs font-extrabold tracking-wider text-zinc-950 uppercase">
             {t.more(list.length - limit)}
           </button>
         </div>

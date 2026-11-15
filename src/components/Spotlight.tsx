@@ -70,7 +70,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -80,7 +80,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
       aria-label={t.cardOf(player.name)}
     >
       <motion.div
-        className="noir-glass-strong rounded-3xl p-5 sm:p-8 max-w-4xl w-full max-h-[92dvh] overflow-y-auto flex flex-col md:flex-row gap-8 items-center md:items-start"
+        className="noir-glass-strong flex max-h-[92dvh] w-full max-w-4xl flex-col items-center gap-8 overflow-y-auto rounded-3xl p-5 sm:p-8 md:flex-row md:items-start"
         initial={{ scale: 0.8, y: 30, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -96,37 +96,37 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
           </div>
         </motion.div>
 
-        <div className="flex-1 min-w-0 w-full space-y-5">
+        <div className="w-full min-w-0 flex-1 space-y-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-black uppercase tracking-[0.12em] text-white"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
-              <p className="text-sm text-zinc-300 mt-1">{label(team.name)} ({team.tag}) • {label(player.position || "Flex")} • {player.hero}</p>
+              <h2 className="text-3xl font-black tracking-[0.12em] text-white uppercase"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
+              <p className="mt-1 text-sm text-zinc-300">{label(team.name)} ({team.tag}) • {label(player.position || "Flex")} • {player.hero}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label={t.close} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-200/20 text-zinc-300 hover:text-white cursor-pointer">✕</button>
+            <button type="button" onClick={onClose} aria-label={t.close} className="size-9 cursor-pointer rounded-full border border-zinc-200/20 bg-zinc-900/80 text-zinc-300 hover:text-white">✕</button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? t.special : tier.name}</span>
             <TrendBadge delta={getPlayerTrend(player)} size="editor" />
-            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-950 hover:bg-white cursor-pointer">{t.edit}</button>}
-            {player.special && player.specialText && <span className="text-xs text-amber-200 font-bold">✦ {player.specialText}</span>}
+            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto cursor-pointer rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-bold tracking-wider text-zinc-950 uppercase hover:bg-white">{t.edit}</button>}
+            {player.special && player.specialText && <span className="text-xs font-bold text-amber-200">✦ {player.specialText}</span>}
           </div>
 
           <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">{t.history}</h3>
+            <h3 className="mb-2 text-[11px] font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.history}</h3>
             <HistoryChart points={history} color={tier.c} />
           </div>
 
           {versions.length > 1 && (
             <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">{t.versions} ({versions.length})</h3>
+              <h3 className="mb-2 text-[11px] font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.versions} ({versions.length})</h3>
               <div className="flex flex-wrap gap-2">
                 {versions.map((v) => (
                   <button
                     key={v.id}
                     type="button"
                     onClick={() => onSwitch(v.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${v.id === player.id ? "bg-zinc-100 text-zinc-950 border-white" : "bg-zinc-900/70 text-zinc-300 border-zinc-200/15 hover:text-white"}`}
+                    className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-bold ${v.id === player.id ? "border-white bg-zinc-100 text-zinc-950" : "border-zinc-200/15 bg-zinc-900/70 text-zinc-300 hover:text-white"}`}
                   >
                     {isMainCard(v) ? t.main : v.special ? t.special : t.version} • {teamOf(teams, v).tag}
                   </button>
@@ -154,7 +154,7 @@ function HistoryChart({ points, color }: { points: { date: string; ovr: number }
   const y = (v: number) => H - P - ((v - min) / Math.max(1, max - min)) * (H - 2 * P);
   const d = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.ovr).toFixed(1)}`).join(" ");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl bg-black/40 border border-zinc-200/10">
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full rounded-xl border border-zinc-200/10 bg-black/40">
       <motion.path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeOut" }} style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
       {points.map((p, i) => (
         <g key={i}>

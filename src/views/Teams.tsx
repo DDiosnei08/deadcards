@@ -55,11 +55,11 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
 
   return (
     <section className="space-y-6">
-      <div className="noir-glass rounded-2xl p-5 sm:p-7 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="noir-glass space-y-4 rounded-2xl p-5 sm:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold uppercase tracking-[0.11em] text-zinc-100 leading-tight">{t.title}</h1>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-1.5">{t.hint}</p>
+            <h1 className="text-2xl/tight font-extrabold tracking-[0.11em] text-zinc-100 uppercase sm:text-3xl lg:text-[32px]">{t.title}</h1>
+            <p className="mt-1.5 text-xs text-zinc-400 sm:text-sm">{t.hint}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={pill(false)} onClick={() => setDesc((d) => !d)}>{desc ? t.desc : t.asc}</button>
@@ -81,7 +81,7 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
         </div>
       </div>
 
-      {visible.length === 0 && <div className="noir-glass rounded-2xl p-10 text-center text-sm font-bold uppercase tracking-wider text-zinc-200">{t.noTeams}</div>}
+      {visible.length === 0 && <div className="noir-glass rounded-2xl p-10 text-center text-sm font-bold tracking-wider text-zinc-200 uppercase">{t.noTeams}</div>}
 
       {visible.map(({ team, o }) => {
         const roster = activeRoster(players, team.id);
@@ -99,23 +99,23 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
               type="button"
               onClick={() => setOpen((s) => ({ ...s, [team.id]: !s[team.id] }))}
               aria-expanded={isOpen}
-              className="team-header-trigger flex items-center gap-3.5 text-left group focus:outline-none"
+              className="team-header-trigger group flex items-center gap-3.5 text-left focus:outline-none"
             >
-              <div className="team-logo-frame w-[60px] h-[60px]"><TeamLogo team={team} /></div>
+              <div className="team-logo-frame size-[60px]"><TeamLogo team={team} /></div>
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h2 className="team-title-text text-2xl sm:text-[26px] font-extrabold uppercase tracking-wider text-zinc-100 transition-all duration-200 leading-none">{team.name}</h2>
+                  <h2 className="team-title-text text-2xl leading-none font-extrabold tracking-wider text-zinc-100 uppercase transition-all duration-200 sm:text-[26px]">{team.name}</h2>
                   <span className="team-ovr-chip">
                     <span className="team-ovr-num">{o.count ? o.rounded : "--"}</span>
                     <span className="team-ovr-lbl">OVR</span>
                   </span>
                   <TrendBadge delta={teamTrend(players, team.id)} size="editor" />
-                  <span className="px-2 py-0.5 rounded-md bg-black/45 border border-zinc-200/25 text-[10px] font-bold uppercase tracking-widest text-zinc-200">{label(team.region)}</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 group-hover:bg-zinc-100 group-hover:text-zinc-950 border border-zinc-200/20 text-[10px] font-bold uppercase tracking-wider text-zinc-200 transition-colors">
+                  <span className="rounded-md border border-zinc-200/25 bg-black/45 px-2 py-0.5 text-[10px] font-bold tracking-widest text-zinc-200 uppercase">{label(team.region)}</span>
+                  <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200/20 bg-black/50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-zinc-200 uppercase transition-colors group-hover:bg-zinc-100 group-hover:text-zinc-950">
                     {isOpen ? t.collapse : t.open}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-300 mt-1">{t.count(roster.length)}</p>
+                <p className="mt-1 text-xs text-zinc-300">{t.count(roster.length)}</p>
               </div>
             </button>
 
@@ -129,9 +129,9 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-4 pt-6 border-t border-zinc-200/15 flex flex-wrap justify-center sm:justify-start gap-6">
+                  <div className="mt-4 flex flex-wrap justify-center gap-6 border-t border-zinc-200/15 pt-6 sm:justify-start">
                     {roster.length === 0 && (
-                      <div className="w-full py-8 text-center text-xs text-zinc-300 border border-dashed border-zinc-200/20 rounded-xl bg-black/25">{t.emptyRoster}</div>
+                      <div className="w-full rounded-xl border border-dashed border-zinc-200/20 bg-black/25 py-8 text-center text-xs text-zinc-300">{t.emptyRoster}</div>
                     )}
                     {roster.map((p, i) => (
                       <motion.div key={p.id} initial={{ opacity: 0, y: 24, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>

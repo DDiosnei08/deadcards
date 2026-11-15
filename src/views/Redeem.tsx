@@ -91,15 +91,15 @@ export function Redeem({ onOpenCard }: { onOpenCard: (id: string) => void }) {
 
   return (
     <section className="space-y-5">
-      <div className="noir-glass rounded-2xl p-5 sm:p-7 space-y-4">
+      <div className="noir-glass space-y-4 rounded-2xl p-5 sm:p-7">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-[0.11em] text-zinc-100">{t.title}</h1>
-          <p className="text-xs text-zinc-400 mt-1.5">{me ? t.owned(cards.length) : t.signIn}</p>
+          <h1 className="text-2xl font-extrabold tracking-[0.11em] text-zinc-100 uppercase sm:text-3xl">{t.title}</h1>
+          <p className="mt-1.5 text-xs text-zinc-400">{me ? t.owned(cards.length) : t.signIn}</p>
         </div>
         {!me ? (
           <div className="max-w-sm"><SignInOptions /></div>
         ) : (
-          <form onSubmit={submit} className="flex flex-wrap gap-2 items-center">
+          <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -111,7 +111,7 @@ export function Redeem({ onOpenCard }: { onOpenCard: (id: string) => void }) {
               required
               className={`${field} w-56`}
             />
-            <button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-zinc-100 text-zinc-950 text-xs font-extrabold uppercase tracking-wider cursor-pointer disabled:opacity-50">
+            <button type="submit" disabled={busy} className="cursor-pointer rounded-xl bg-zinc-100 px-5 py-2.5 text-xs font-extrabold tracking-wider text-zinc-950 uppercase disabled:opacity-50">
               {busy ? t.redeeming : t.redeem}
             </button>
             {msg && <p role="status" className={`text-xs ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>{msg.text}</p>}
@@ -120,7 +120,7 @@ export function Redeem({ onOpenCard }: { onOpenCard: (id: string) => void }) {
       </div>
 
       {me && (
-        <div className="flex flex-wrap justify-center sm:justify-start gap-6">
+        <div className="flex flex-wrap justify-center gap-6 sm:justify-start">
           {cards.map((p) => (
             <Card key={p.id} player={p} variant="medium" onOpen={() => onOpenCard(p.id)} />
           ))}
