@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useData } from "../lib/data";
-import { formatDateBR, getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf } from "../lib/cards";
+import { strings, useLocale, useT } from "../lib/i18n";
+import { getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf, useLabel } from "../lib/cards";
 import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
 import { TrendBadge } from "./TrendBadge";
@@ -11,7 +12,15 @@ import { TrendBadge } from "./TrendBadge";
 gsap.registerPlugin(SplitText);
 const revealed = new Set<string>();
 
+const S = strings({
+  pt: { cardOf: (name: string) => `Carta de ${name}`, close: "Fechar", special: "Especial", edit: "Editar carta", history: "Histórico de OVR", versions: "Versões", main: "Principal", version: "Versão" },
+  en: { cardOf: (name: string) => `${name}'s card`, close: "Close", special: "Special", edit: "Edit card", history: "OVR history", versions: "Versions", main: "Main", version: "Version" },
+  es: { cardOf: (name: string) => `Carta de ${name}`, close: "Cerrar", special: "Especial", edit: "Editar carta", history: "Historial de OVR", versions: "Versiones", main: "Principal", version: "Versión" },
+});
+
 export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: string; onClose: () => void; onSwitch: (id: string) => void; onEdit?: (id: string) => void }) {
+  const t = useT(S);
+  const label = useLabel();
   const { teams, players, settings } = useData();
   const player = players.find((p) => p.id === playerId);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -68,7 +77,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Carta de ${player.name}`}
+      aria-label={t.cardOf(player.name)}
     >
       <motion.div
         className="noir-glass-strong rounded-3xl p-5 sm:p-8 max-w-4xl w-full max-h-[92dvh] overflow-y-auto flex flex-col md:flex-row gap-8 items-center md:items-start"
@@ -91,26 +100,26 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-3xl font-black uppercase tracking-[0.12em] text-white"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
-              <p className="text-sm text-zinc-300 mt-1">{team.name} ({team.tag}) • {player.position} • {player.hero}</p>
+              <p className="text-sm text-zinc-300 mt-1">{label(team.name)} ({team.tag}) • {label(player.position || "Flex")} • {player.hero}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label="Fechar" className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-200/20 text-zinc-300 hover:text-white cursor-pointer">✕</button>
+            <button type="button" onClick={onClose} aria-label={t.close} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-200/20 text-zinc-300 hover:text-white cursor-pointer">✕</button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? "Especial" : tier.name}</span>
+            <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? t.special : tier.name}</span>
             <TrendBadge delta={getPlayerTrend(player)} size="editor" />
-            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-950 hover:bg-white cursor-pointer">Editar carta</button>}
+            {onEdit && <button type="button" onClick={() => onEdit(player.id)} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-zinc-100 text-zinc-950 hover:bg-white cursor-pointer">{t.edit}</button>}
             {player.special && player.specialText && <span className="text-xs text-amber-200 font-bold">✦ {player.specialText}</span>}
           </div>
 
           <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Histórico de OVR</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">{t.history}</h3>
             <HistoryChart points={history} color={tier.c} />
           </div>
 
           {versions.length > 1 && (
             <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Versões ({versions.length})</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">{t.versions} ({versions.length})</h3>
               <div className="flex flex-wrap gap-2">
                 {versions.map((v) => (
                   <button
@@ -119,7 +128,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
                     onClick={() => onSwitch(v.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${v.id === player.id ? "bg-zinc-100 text-zinc-950 border-white" : "bg-zinc-900/70 text-zinc-300 border-zinc-200/15 hover:text-white"}`}
                   >
-                    {isMainCard(v) ? "Principal" : v.special ? "Especial" : "Versão"} • {teamOf(teams, v).tag}
+                    {isMainCard(v) ? t.main : v.special ? t.special : t.version} • {teamOf(teams, v).tag}
                   </button>
                 ))}
               </div>
@@ -132,6 +141,12 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
 }
 
 function HistoryChart({ points, color }: { points: { date: string; ovr: number }[]; color: string }) {
+  const locale = useLocale();
+  // Datas são ISO (YYYY-MM-DD); formata dia/mês na ordem do idioma, caindo no texto original se não for data válida.
+  const short = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(+d) ? iso : d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  };
   const W = 420, H = 140, P = 24;
   const vals = points.map((p) => p.ovr);
   const min = Math.min(...vals) - 2, max = Math.max(...vals) + 2;
@@ -145,7 +160,7 @@ function HistoryChart({ points, color }: { points: { date: string; ovr: number }
         <g key={i}>
           <circle cx={x(i)} cy={y(p.ovr)} r="4" fill="#09090b" stroke={color} strokeWidth="2" />
           <text x={x(i)} y={y(p.ovr) - 9} textAnchor="middle" fontSize="11" fontWeight="800" fill="#f4f4f5">{p.ovr}</text>
-          <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="#a1a1aa">{formatDateBR(p.date).slice(0, 5)}</text>
+          <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="#a1a1aa">{short(p.date)}</text>
         </g>
       ))}
     </svg>
