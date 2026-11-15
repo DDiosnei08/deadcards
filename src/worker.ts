@@ -1,5 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { createAuth, currentUser } from "./auth";
+import { profileCard, profileLeaderboard, pruneProfileCache } from "./profile";
+import { PROFILE_CARD_PATH, PROFILE_LEADERBOARD_PATH } from "./lib/profile";
 
 export interface Env {
   DB: D1Database;
@@ -27,7 +29,7 @@ const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.i
 const bad = (msg: string, status = 400, code?: string) => Response.json({ error: msg, code }, { status });
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
-const ALLOWED_PATHS = ["/v1/assets/heroes", "/v1/analytics/hero-stats", "/v1/patches"];
+const ALLOWED_PATHS = ["/v1/assets/heroes", "/v1/assets/ranks", "/v1/analytics/hero-stats", "/v1/patches"];
 const UPSERT_CACHE =
   "INSERT INTO api_cache (cache_key, body, fetched_at) VALUES (?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET body = excluded.body, fetched_at = excluded.fetched_at";
 
@@ -263,6 +265,8 @@ export default {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/auth/")) return createAuth(env, request).handler(request);
     if (url.pathname === "/api/me") return Response.json(await currentUser(env, request));
+    if (url.pathname === PROFILE_CARD_PATH) return profileCard(env, request);
+    if (url.pathname === PROFILE_LEADERBOARD_PATH) return profileLeaderboard(env, request);
     if (url.pathname === "/api/codes" || url.pathname.startsWith("/api/codes/")) {
       if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);
       return codes(env, request, url.pathname.slice("/api/codes/".length));
@@ -302,6 +306,7 @@ export default {
 
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(syncFromDeadlockApi(env));
+    ctx.waitUntil(pruneProfileCache(env));
     ctx.waitUntil(env.DB.prepare("DELETE FROM api_cache WHERE cache_key LIKE 'feedback:%' AND fetched_at < unixepoch() - ?").bind(FEEDBACK_GAP_SECONDS).run());
   },
 } satisfies ExportedHandler<Env>;

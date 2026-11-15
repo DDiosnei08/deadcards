@@ -8,6 +8,7 @@ import { RegionBackdrop } from "../components/RegionBackdrop";
 import { TeamLogo3D } from "../components/TeamLogo3D";
 import { usePointerTilt } from "../lib/tilt";
 import { Icon } from "../components/Icon";
+import { ParticipantsRanking } from "../components/ParticipantsRanking";
 
 const S = strings({
   pt: { featured: "Herói em destaque", prev: "Herói anterior", next: "Próximo herói", none: "Nenhum time cadastrado ainda.", players: (n: number) => `${n} ${n === 1 ? "jogador" : "jogadores"}` },
@@ -15,7 +16,7 @@ const S = strings({
   es: { featured: "Héroe destacado", prev: "Héroe anterior", next: "Siguiente héroe", none: "Aún no hay equipos registrados.", players: (n: number) => `${n} ${n === 1 ? "jugador" : "jugadores"}` },
 });
 
-export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
+export function Home({ onOpenTeam, onOpenProfile }: { onOpenTeam: (teamId: string) => void; onOpenProfile?: () => void }) {
   const { teams, players, settings, heroNames, heroArt } = useData();
   const t = useT(S);
   const label = useLabel();
@@ -87,6 +88,7 @@ export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
           />
         ))}
       </div>
+      <ParticipantsRanking onOpenProfile={onOpenProfile} />
     </section>
   );
 }

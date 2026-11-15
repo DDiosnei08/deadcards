@@ -15,6 +15,7 @@ import { Legal } from "./views/Legal";
 import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } from "./lib/i18n";
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
+import { Profile } from "./views/Profile";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -26,7 +27,7 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback" | "profile";
 const TABS = ["teams", "tierlist", "collection", "redeem"] as const;
 
 const S = strings({
@@ -276,7 +277,7 @@ function Shell() {
             ))}
           </nav>
           <LangMenu />
-          <div className="shrink-0"><Account /></div>
+          <div className="shrink-0"><Account onProfile={() => setTab("profile")} /></div>
         </div>
       </header>
 
@@ -290,11 +291,12 @@ function Shell() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            {tab === "home" && <Home onOpenTeam={openTeam} />}
+            {tab === "home" && <Home onOpenTeam={openTeam} onOpenProfile={me ? () => setTab("profile") : undefined} />}
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
+            {tab === "profile" && me && <Profile />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}

@@ -3,12 +3,13 @@ import type { AppData, HeroArt } from "./types";
 import { DEFAULT_TIER_CONFIG } from "./cards";
 import { strings, useT } from "./i18n";
 
-type ApiHero = { name: string; player_selectable?: boolean; images?: { icon_hero_card_webp?: string; icon_image_small_webp?: string } };
+type ApiHero = { id: number; name: string; player_selectable?: boolean; images?: { icon_hero_card_webp?: string; icon_image_small_webp?: string } };
 
 export type Me = { name: string; image: string | null; admin: boolean } | null;
 
 type Ctx = AppData & {
   heroNames: string[];
+  heroName: (id: number) => string | undefined;
   heroArt: (name: string) => HeroArt | null;
   heroIcon: (name: string) => string | null;
   me: Me;
@@ -66,11 +67,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx | null>(() => {
     if (!data) return null;
     const byName = new Map(apiHeroes.map((h) => [h.name.toLowerCase(), h]));
+    const byId = new Map(apiHeroes.map((h) => [h.id, h.name]));
     const settings = { ...data.settings, tierConfig: data.settings.tierConfig?.length ? data.settings.tierConfig : DEFAULT_TIER_CONFIG };
     return {
       ...data,
       settings,
       heroNames: [...new Set([...apiHeroes.map((h) => h.name), ...Object.keys(data.heroes)])].sort(),
+      heroName: (id) => byId.get(id),
       heroArt: (name) => {
         const own = data.heroes[name];
         if (own) return own;
