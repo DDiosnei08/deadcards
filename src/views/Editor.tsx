@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useAnimate } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, useData } from "../lib/data";
-import { DEFAULT_TIER_CONFIG, REGIONS, calculateOVR, getPlayerHistory, getPlayerOvr } from "../lib/cards";
+import { DEFAULT_TIER_CONFIG, REGIONS, STAT_KEYS, calculateOVR, getPlayerHistory, getPlayerOvr } from "../lib/cards";
 import { FRAME_PRESETS, getCardTier, type Tier } from "../lib/rarity";
 import type { BgSettings, Player, Stats, Team, TierBand } from "../lib/types";
 import { Card } from "../components/Card";
@@ -9,7 +9,6 @@ import { TeamLogo } from "../components/TeamLogo";
 import { HoldButton } from "../components/HoldButton";
 
 const POSITIONS = ["Carry", "OffCarry", "Frontline", "Flex", "Suporte"];
-const STAT_KEYS: (keyof Stats)[] = ["MIR", "MAC", "SUP", "MOV", "POL", "CON"];
 const SECTIONS = [
   { id: "card", label: "Carta" },
   { id: "teams", label: "Times" },

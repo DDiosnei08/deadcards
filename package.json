@@ -11,7 +11,8 @@
     "db:migrate": "wrangler d1 migrations apply deadcards --local",
     "db:migrate:remote": "wrangler d1 migrations apply deadcards --remote",
     "typegen": "wrangler types",
-    "db:import": "node scripts/import-save.mjs"
+    "db:import": "node scripts/import-save.mjs",
+    "test": "tsc -p test && vitest run"
   },
   "dependencies": {
     "better-auth": "^1.7.25",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.69.1",
+    "@cloudflare/vitest-plugin": "^1.8.2",
     "@cloudflare/workers-types": "^4.20250101.0",
     "@tailwindcss/vite": "^4.1.0",
     "@types/react": "^19.1.0",
@@ -30,6 +32,7 @@
     "tailwindcss": "^4.1.0",
     "typescript": "^5.8.0",
     "vite": "^6.3.0",
+    "vitest": "^4.1.12",
     "wrangler": "^4.20.0"
   }
 }
