@@ -9,7 +9,8 @@
     "deploy": "npm run build && wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply deadcards --local",
     "db:migrate:remote": "wrangler d1 migrations apply deadcards --remote",
-    "typegen": "wrangler types"
+    "typegen": "wrangler types",
+    "db:import": "node scripts/import-save.mjs"
   },
   "dependencies": {
     "motion": "^12.0.0",
