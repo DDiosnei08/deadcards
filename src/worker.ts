@@ -1,11 +1,26 @@
 /// <reference types="@cloudflare/workers-types" />
+import { createAuth, currentUser } from "./auth";
 
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   ASSETS_BUCKET: R2Bucket;
   DEADLOCK_API_BASE: string;
+  BETTER_AUTH_SECRET: string;
+  TWITCH_CLIENT_ID: string;
+  TWITCH_CLIENT_SECRET: string;
+  ADMINS: string;
 }
+
+const IMAGE_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
+const UPLOAD_FOLDERS = ["players", "teams", "heroes", "bg", "home"];
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const PLAYER_EXTRA = ["footer", "footerSize", "footerColor", "special", "specialText", "frame", "variantOf", "inactive", "art"];
+const ID_RE = /^[\w-]{1,64}$/;
+
+const keyOf = (url: unknown) => (typeof url === "string" && url.startsWith("/img/") ? url.slice(5) : null);
+const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
+const bad = (msg: string, status = 400) => Response.json({ error: msg }, { status });
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 const ALLOWED_PATHS = ["/v1/assets/heroes", "/v1/analytics/hero-stats", "/v1/patches"];
@@ -81,9 +96,74 @@ async function serveImage(env: Env, key: string): Promise<Response> {
   return new Response(obj.body, { headers });
 }
 
+async function upload(env: Env, request: Request, folder: string): Promise<Response> {
+  const ext = IMAGE_TYPES[request.headers.get("content-type") ?? ""];
+  if (!ext) return bad("tipo de imagem não suportado");
+  if (!UPLOAD_FOLDERS.includes(folder)) return bad("pasta inválida");
+  const body = await request.arrayBuffer();
+  if (!body.byteLength || body.byteLength > MAX_UPLOAD_BYTES) return bad("imagem vazia ou maior que 8 MB");
+  const key = `${folder}/${crypto.randomUUID()}.${ext}`;
+  await env.ASSETS_BUCKET.put(key, body, { httpMetadata: { contentType: request.headers.get("content-type")! } });
+  return Response.json({ url: `/img/${key}` });
+}
+
+// shortcut: replaced or deleted images stay in R2, add a sweep if the bucket grows
+async function write(env: Env, request: Request, kind: string, id: string): Promise<Response> {
+  const del = request.method === "DELETE";
+  if (!del && request.method !== "PUT") return bad("método não suportado", 405);
+  const b = del ? {} : ((await request.json()) as Record<string, any>);
+  const db = env.DB;
+  if (kind === "players") {
+    if (del) await db.prepare("DELETE FROM players WHERE id = ?").bind(id).run();
+    else {
+      if (!b.name || !b.teamId || !b.stats) return bad("jogador incompleto");
+      const extra = Object.fromEntries(PLAYER_EXTRA.filter((k) => b[k] !== undefined && b[k] !== null).map((k) => [k, b[k]]));
+      await db.prepare(
+        "INSERT INTO players (id, team_id, name, position, hero, stats_json, ovr, c1, c2, history_json, extra_json) VALUES (?,?,?,?,?,?,?,?,?,?,?) " +
+        "ON CONFLICT(id) DO UPDATE SET team_id=excluded.team_id, name=excluded.name, position=excluded.position, hero=excluded.hero, stats_json=excluded.stats_json, ovr=excluded.ovr, c1=excluded.c1, c2=excluded.c2, history_json=excluded.history_json, extra_json=excluded.extra_json",
+      ).bind(id, b.teamId, b.name, b.position ?? "Flex", b.hero ?? "Abrams", JSON.stringify(b.stats), Number.isFinite(b.ovr) ? Math.round(b.ovr) : null,
+        b.c1 ?? "#0e7490", b.c2 ?? "#082f49", JSON.stringify(b.history ?? []), JSON.stringify(extra)).run();
+    }
+  } else if (kind === "teams") {
+    if (del) await db.batch([db.prepare("DELETE FROM players WHERE team_id = ?").bind(id), db.prepare("DELETE FROM teams WHERE id = ?").bind(id)]);
+    else {
+      if (!b.name || !b.tag) return bad("time incompleto");
+      await db.prepare(
+        "INSERT INTO teams (id, name, tag, region, logo_key, bg_json) VALUES (?,?,?,?,?,?) " +
+        "ON CONFLICT(id) DO UPDATE SET name=excluded.name, tag=excluded.tag, region=excluded.region, logo_key=excluded.logo_key, bg_json=excluded.bg_json",
+      ).bind(id, b.name, b.tag, b.region ?? "Europa", keyOf(b.logo), b.bg ? JSON.stringify(b.bg) : null).run();
+    }
+  } else if (kind === "heroes") {
+    if (del) await db.prepare("DELETE FROM heroes WHERE name = ?").bind(id).run();
+    else {
+      const key = keyOf(b.url);
+      if (!key) return bad("imagem do herói obrigatória");
+      await db.prepare("INSERT INTO heroes (name, image_key, zoom, x, y) VALUES (?,?,?,?,?) ON CONFLICT(name) DO UPDATE SET image_key=excluded.image_key, zoom=excluded.zoom, x=excluded.x, y=excluded.y")
+        .bind(id, key, num(b.zoom, 100), num(b.x, 50), num(b.y, 30)).run();
+    }
+  } else if (kind === "settings" && !del) {
+    const rows: Record<string, unknown> = {};
+    if (b.tierConfig !== undefined) rows.tierConfig = b.tierConfig;
+    if (b.bg !== undefined) { rows.bg = b.bg ? { ...b.bg, imageUrl: "" } : null; rows.bgImageKey = keyOf(b.bg?.imageUrl); }
+    if (b.homeHero !== undefined) rows.homeHeroKey = keyOf(b.homeHero);
+    await db.batch(Object.entries(rows).map(([k, v]) => db.prepare("INSERT INTO settings (key, value_json) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json").bind(k, JSON.stringify(v))));
+  } else return bad("rota inválida", 404);
+  return Response.json({ ok: true });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/auth/")) return createAuth(env, request).handler(request);
+    if (url.pathname === "/api/me") return Response.json(await currentUser(env, request));
+    const admin = url.pathname.match(/^\/api\/(players|teams|heroes|settings|upload)\/([^/]+)$/);
+    if (admin) {
+      if (!(await currentUser(env, request))?.admin) return bad("sem permissão", 403);
+      const id = decodeURIComponent(admin[2]);
+      if (admin[1] === "upload") return request.method === "POST" ? upload(env, request, id) : bad("método não suportado", 405);
+      if (admin[1] !== "heroes" && !ID_RE.test(id)) return bad("id inválido");
+      return write(env, request, admin[1], id);
+    }
     if (url.pathname === "/api/health") return Response.json({ ok: true });
     if (url.pathname === "/api/data") return appData(env);
     if (url.pathname === "/api/deadlock") {

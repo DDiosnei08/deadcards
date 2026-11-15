@@ -26,6 +26,7 @@
     "crons": ["0 */6 * * *"]
   },
   "vars": {
-    "DEADLOCK_API_BASE": "https://api.deadlock-api.com"
+    "DEADLOCK_API_BASE": "https://api.deadlock-api.com",
+    "ADMINS": "admvicli,hagizao"
   }
 }
