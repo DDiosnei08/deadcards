@@ -153,7 +153,7 @@ async function write(env: Env, request: Request, kind: string, id: string): Prom
   return Response.json({ ok: true });
 }
 
-// shortcut: sem limite de tentativas por usuário, códigos longos e aleatórios evitam chute; adicionar rate limit se vazar
+// shortcut: sem limite de tentativas; o mínimo de 8 caracteres torna o chute inviável, adicionar rate limit se aparecer abuso
 const CODE_VALID = "uses < max_uses AND (starts_at IS NULL OR starts_at <= unixepoch()) AND (expires_at IS NULL OR expires_at > unixepoch())";
 const INVALID_CODE = "código inválido, expirado ou esgotado";
 
@@ -191,7 +191,7 @@ async function codes(env: Env, request: Request, rest: string): Promise<Response
     const maxUses = Number.isInteger(b.maxUses) && b.maxUses >= 1 ? (b.maxUses as number) : 0;
     const startsAt = timestamp(b.startsAt);
     const expiresAt = timestamp(b.expiresAt);
-    if (!/^[A-Z0-9-]{4,64}$/.test(code)) return bad("código deve ter de 4 a 64 letras, números ou hífen");
+    if (!/^[A-Z0-9-]{8,64}$/.test(code)) return bad("código deve ter de 8 a 64 letras, números ou hífen");
     if (!maxUses) return bad("máximo de usos inválido");
     if (typeof b.playerId !== "string" || !b.playerId) return bad("escolha o jogador");
     if (startsAt === undefined || expiresAt === undefined) return bad("data inválida");
