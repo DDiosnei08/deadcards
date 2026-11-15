@@ -12,6 +12,16 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 
+const REPO = "https://github.com/hagizao/deadcards";
+
+function GitHubIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" aria-hidden="true">
+      <path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.2v3.3c0 .3.1.7.8.6A12 12 0 0 0 12 .3" />
+    </svg>
+  );
+}
+
 type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor";
 const TABS: { id: Exclude<Tab, "home">; label: string }[] = [
   { id: "teams", label: "Times" },
@@ -104,6 +114,19 @@ function Shell() {
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}          </motion.div>
         </AnimatePresence>
       </main>
+
+      <footer className="border-t border-zinc-200/10 mt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+          <a href={REPO} target="_blank" rel="noreferrer" className="flex items-center gap-2 font-bold uppercase tracking-wider text-zinc-300 hover:text-white">
+            <GitHubIcon /> Código aberto no GitHub
+          </a>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Links do projeto">
+            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Relatar problema</a>
+            <a href={`${REPO}/issues/new/choose`} target="_blank" rel="noreferrer" className="hover:text-white">Sugerir ideia</a>
+            <a href={`${REPO}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" className="hover:text-white">Como contribuir</a>
+          </nav>
+        </div>
+      </footer>
 
       <AnimatePresence>
         {spotlight && <Spotlight key="spotlight" playerId={spotlight} onClose={() => setSpotlight(null)} onSwitch={setSpotlight} onEdit={me?.admin ? editCard : undefined} />}
