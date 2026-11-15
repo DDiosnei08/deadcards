@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { useData } from "../lib/data";
 import { regionClass, teamOvr, teamTrend, tierKeyForOvr } from "../lib/cards";
@@ -14,11 +14,11 @@ export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
     });
     return settings.homeHero ? [{ name: "", url: settings.homeHero }, ...list] : list;
   }, [heroNames, heroArt, settings.homeHero]);
-  const [heroIdx, setHeroIdx] = useState(0);
+  const [[heroIdx, dir], setHero] = useState([0, 1]);
   const slide = slides[heroIdx % Math.max(1, slides.length)];
   const hero = slide?.name;
   const homeImg = slide?.url;
-  const step = (d: number) => setHeroIdx((i) => (i + d + slides.length) % slides.length);
+  const step = (d: number) => setHero(([i]) => [(i + d + slides.length) % slides.length, d]);
 
   const ranked = teams
     .map((team) => ({ team, ...teamOvr(players, team.id), delta: teamTrend(players, team.id) }))
@@ -27,18 +27,27 @@ export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
       <div className="home-col home-hero-box noir-glass rounded-2xl overflow-hidden relative">
-        {homeImg && (
-          <motion.img
-            key={homeImg}
-            src={homeImg}
-            alt={hero ?? "Herói em destaque"}
-            draggable={false}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 w-full h-full object-cover object-center select-none"
-          />
-        )}
+        <AnimatePresence initial={false} custom={dir}>
+          {homeImg && (
+            <motion.img
+              key={homeImg}
+              src={homeImg}
+              alt={hero || "Herói em destaque"}
+              draggable={false}
+              custom={dir}
+              variants={{
+                enter: (d: number) => ({ opacity: 0, x: d * 40 }),
+                center: { opacity: 1, x: 0 },
+                exit: (d: number) => ({ opacity: 0, x: d * -40 }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 w-full h-full object-cover object-center select-none"
+            />
+          )}
+        </AnimatePresence>
         <div className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(9,9,11,0.55), transparent)" }} />
         {slides.length > 1 && (
           <>
