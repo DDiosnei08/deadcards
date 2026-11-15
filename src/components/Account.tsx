@@ -6,6 +6,7 @@ import { useData } from "../lib/data";
 const auth = createAuthClient();
 
 export const signInWithTwitch = () => auth.signIn.social({ provider: "twitch", callbackURL: "/" });
+export const signInWithGoogle = () => auth.signIn.social({ provider: "google", callbackURL: "/" });
 
 export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -32,17 +33,15 @@ export function Account() {
 
   if (!me) {
     return (
-      <motion.button
-        type="button"
-        onClick={signInWithTwitch}
+      <motion.a
+        href="/login"
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
-        className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider text-white bg-[#9146ff] hover:bg-[#a970ff] shadow-[0_0_18px_rgba(145,70,255,0.45)] cursor-pointer"
-        aria-label="Entrar com Twitch"
+        className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-950 bg-zinc-100 hover:bg-white shadow-[0_0_18px_rgba(244,244,245,0.35)] cursor-pointer"
+        aria-label="Entrar"
       >
-        <TwitchIcon />
-        <span className="hidden sm:inline">Entrar</span>
-      </motion.button>
+        <span>Entrar</span>
+      </motion.a>
     );
   }
 

@@ -1,3 +1,5 @@
 BETTER_AUTH_SECRET=troque-por-uma-string-aleatoria-de-32-ou-mais-caracteres
 TWITCH_CLIENT_ID=
 TWITCH_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

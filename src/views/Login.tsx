@@ -1,7 +1,28 @@
 import { motion } from "motion/react";
 import { useEffect } from "react";
 import { useData } from "../lib/data";
-import { TwitchIcon, signInWithTwitch } from "../components/Account";
+import { TwitchIcon, signInWithGoogle, signInWithTwitch } from "../components/Account";
+
+export function SignInOptions() {
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={signInWithTwitch}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold uppercase tracking-wider text-sm text-white bg-[#9146ff] hover:bg-[#a970ff] shadow-[0_0_24px_rgba(145,70,255,0.45)] transition cursor-pointer"
+      >
+        <TwitchIcon /> Entrar com Twitch
+      </button>
+      <button
+        type="button"
+        onClick={signInWithGoogle}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold uppercase tracking-wider text-sm text-zinc-900 bg-white hover:bg-zinc-200 shadow-[0_0_24px_rgba(255,255,255,0.2)] transition cursor-pointer"
+      >
+        <span className="font-black text-base leading-none" aria-hidden="true">G</span> Entrar com Google
+      </button>
+    </div>
+  );
+}
 
 export function Login() {
   const { me } = useData();
@@ -16,13 +37,7 @@ export function Login() {
         transition={{ type: "spring", stiffness: 240, damping: 22 }}
       >
         <h1 className="text-xl font-extrabold uppercase tracking-[0.18em] text-zinc-100">Deadlock Cards</h1>
-        <button
-          type="button"
-          onClick={signInWithTwitch}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold uppercase tracking-wider text-sm text-white bg-[#9146ff] hover:bg-[#a970ff] shadow-[0_0_24px_rgba(145,70,255,0.45)] transition cursor-pointer"
-        >
-          <TwitchIcon /> Entrar com Twitch
-        </button>
+        <SignInOptions />
       </motion.div>
     </div>
   );
