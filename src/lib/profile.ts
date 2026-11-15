@@ -1,5 +1,6 @@
-import { STAT_KEYS } from "./cards";
-import type { Player, Stats } from "./types";
+import { getPlayerOvr, STAT_KEYS } from "./cards";
+import { getCardTier, RARITY_TIERS } from "./rarity";
+import type { Player, Stats, TierBand } from "./types";
 
 export const PROFILE_CARD_PATH = "/api/profile/card";
 export const PROFILE_NAME_MAX = 24;
@@ -32,4 +33,25 @@ export function parseProfileCard(input: unknown): ProfileCard | null {
 
 export function profilePlayer(card: ProfileCard): Player {
   return { id: "profile", teamId: "", position: "Flex", c1: "#27272a", c2: "#18181b", history: [], ...card };
+}
+
+/** A porcentagem considera todas as cartas publicadas, incluindo versões especiais. */
+export function summarizeCollection(players: Player[], ownedIds: string[], tiers: TierBand[]) {
+  const owned = new Set(ownedIds);
+  const cards = players.filter((player) => owned.has(player.id));
+  const best = cards.reduce<Player | null>((top, player) =>
+    !top || getPlayerOvr(player) > getPlayerOvr(top) ? player : top, null);
+  const counts = new Map<string, number>();
+  for (const player of cards) {
+    const tier = getCardTier(player, tiers).tierKey;
+    counts.set(tier, (counts.get(tier) ?? 0) + 1);
+  }
+
+  return {
+    cards,
+    total: players.length,
+    percent: players.length ? Math.round((cards.length / players.length) * 100) : 0,
+    best,
+    rarities: RARITY_TIERS.map((tier) => ({ ...tier, count: counts.get(tier.tierKey) ?? 0 })),
+  };
 }
