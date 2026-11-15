@@ -117,6 +117,11 @@ async function write(env: Env, request: Request, kind: string, id: string): Prom
   if (!del && request.method !== "PUT") return bad("método não suportado", 405);
   const b = del ? {} : ((await request.json()) as Record<string, any>);
   const db = env.DB;
+  if (del && (kind === "players" || kind === "teams")) {
+    const col = kind === "players" ? "id" : "team_id";
+    const owned = await db.prepare(`SELECT 1 FROM user_cards uc JOIN players p ON p.id = uc.player_id WHERE p.${col} = ? LIMIT 1`).bind(id).first();
+    if (owned) return bad("há cartas resgatadas por usuários; marque como inativo em vez de apagar", 409);
+  }
   if (kind === "players") {
     if (del) await db.prepare("DELETE FROM players WHERE id = ?").bind(id).run();
     else {
