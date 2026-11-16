@@ -3,7 +3,7 @@ import { Card } from "../components/Card";
 import { CardExportButton } from "../components/CardExportButton";
 import { Icon } from "../components/Icon";
 import { Range } from "../components/Range";
-import { STAT_KEYS, calculateOVR, getPlayerOvr, teamOf } from "../lib/cards";
+import { POSITIONS, STAT_KEYS, calculateOVR, getPlayerOvr, teamOf, useLabel } from "../lib/cards";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
 import { PROFILE_CARD_PATH, PROFILE_NAME_MAX, favoritePath, profilePlayer, profileUrl, summarizeCollection, type ProfileCard, type ProfileCardState, type PublicProfile } from "../lib/profile";
@@ -17,7 +17,7 @@ const S = strings({
     rarity: "Filtrar por raridade", all: "Todas", search: "Buscar cartas", searchPlaceholder: "Jogador, herói ou time…",
     sort: "Ordenar cartas", sortOvr: "Ordenar: OVR", sortName: "Ordenar: Nome", sortTeam: "Ordenar: Time",
     noResults: "Nenhuma carta corresponde aos filtros.", more: (n: number) => `Mostrar mais (${n})`,
-    name: "Nome na carta", hero: "Herói", stats: "Atributos",
+    name: "Nome na carta", hero: "Herói", role: "Função", stats: "Atributos",
     hint: "Defina como você se vê no jogo. A carta aparece só no seu perfil, fora da tier list.",
     save: "Salvar carta", saving: "Salvando…", cancel: "Cancelar", unsaved: "Alterações não salvas.",
     loading: "Carregando perfil…", history: "Histórico de versões",
@@ -32,7 +32,7 @@ const S = strings({
     rarity: "Filter by rarity", all: "All", search: "Search cards", searchPlaceholder: "Player, hero or team…",
     sort: "Sort cards", sortOvr: "Sort: OVR", sortName: "Sort: Name", sortTeam: "Sort: Team",
     noResults: "No cards match your filters.", more: (n: number) => `Show more (${n})`,
-    name: "Name on card", hero: "Hero", stats: "Attributes",
+    name: "Name on card", hero: "Hero", role: "Role", stats: "Attributes",
     hint: "Set how you see yourself in game. The card only shows on your profile, outside the tier list.",
     save: "Save card", saving: "Saving…", cancel: "Cancel", unsaved: "Unsaved changes.",
     loading: "Loading profile…", history: "Version history",
@@ -47,7 +47,7 @@ const S = strings({
     rarity: "Filtrar por rareza", all: "Todas", search: "Buscar cartas", searchPlaceholder: "Jugador, héroe o equipo…",
     sort: "Ordenar cartas", sortOvr: "Ordenar: OVR", sortName: "Ordenar: Nombre", sortTeam: "Ordenar: Equipo",
     noResults: "Ninguna carta coincide con los filtros.", more: (n: number) => `Mostrar más (${n})`,
-    name: "Nombre en la carta", hero: "Héroe", stats: "Atributos",
+    name: "Nombre en la carta", hero: "Héroe", role: "Rol", stats: "Atributos",
     hint: "Define cómo te ves en el juego. La carta solo aparece en tu perfil, fuera de la tier list.",
     save: "Guardar carta", saving: "Guardando…", cancel: "Cancelar", unsaved: "Cambios sin guardar.",
     loading: "Cargando perfil…", history: "Historial de versiones",
@@ -311,6 +311,7 @@ function ProfileEditor({ onSaved, onCancel }: { onSaved: (card: ProfileCard) => 
   const t = useT(S);
   const locale = useLocale();
   const { me, heroNames } = useData();
+  const label = useLabel();
   const [state, setState] = useState<ProfileCardState>();
   const [draft, setDraft] = useState<ProfileCard>();
   const [busy, setBusy] = useState(false);
@@ -374,6 +375,12 @@ function ProfileEditor({ onSaved, onCancel }: { onSaved: (card: ProfileCard) => 
               <select value={card.hero} onChange={(e) => update({ hero: e.target.value })} disabled={busy} className={`${field} disabled:opacity-60`}>
                 {!heroNames.includes(card.hero) && <option value={card.hero}>{card.hero}</option>}
                 {heroNames.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+            </label>
+            <label className="flex min-w-0 flex-1 basis-40 flex-col gap-1.5 text-sm font-semibold text-zinc-100">
+              {t.role}
+              <select value={card.position ?? "Flex"} onChange={(e) => update({ position: e.target.value })} disabled={busy} className={`${field} disabled:opacity-60`}>
+                {POSITIONS.map((p) => <option key={p} value={p}>{label(p)}</option>)}
               </select>
             </label>
           </div>

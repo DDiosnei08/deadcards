@@ -25,6 +25,8 @@ export const DEFAULT_TIER_CONFIG: TierBand[] = [
   { key: "D", min: 1, max: 69, bg: "#7fff7f", text: "#18181b" },
 ];
 
+export const POSITIONS = ["Carry", "OffCarry", "Frontline", "Flex", "Suporte"];
+
 export const STAT_KEYS = ["MIR", "MAC", "SUP", "MOV", "POL", "CON"] as const;
 
 export function calculateOVR(stats: Player["stats"]): number {

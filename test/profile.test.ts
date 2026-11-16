@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TIER_CONFIG } from "../src/lib/cards";
-import { summarizeCollection } from "../src/lib/profile";
+import { parseProfileCard, summarizeCollection } from "../src/lib/profile";
 import type { Player } from "../src/lib/types";
 
 function player(id: string, ovr: number, extra: Partial<Player> = {}): Player {
@@ -10,6 +10,20 @@ function player(id: string, ovr: number, extra: Partial<Player> = {}): Player {
     c1: "#000000", c2: "#ffffff", history: [], ...extra,
   };
 }
+
+describe("parseProfileCard", () => {
+  const base = { name: "Fulano", hero: "Abrams", stats: { MIR: 50, MAC: 50, SUP: 50, MOV: 50, POL: 50, CON: 50 } };
+
+  it("aceita carta antiga sem função", () => {
+    expect(parseProfileCard(base)).not.toHaveProperty("position");
+  });
+
+  it("guarda uma função válida e recusa uma desconhecida", () => {
+    expect(parseProfileCard({ ...base, position: "Suporte" })?.position).toBe("Suporte");
+    expect(parseProfileCard({ ...base, position: "Admin" })).toBeNull();
+    expect(parseProfileCard({ ...base, position: 1 })).toBeNull();
+  });
+});
 
 describe("summarizeCollection", () => {
   it("não divide por zero se o catálogo estiver vazio", () => {

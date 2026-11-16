@@ -1,4 +1,4 @@
-import { getPlayerOvr, STAT_KEYS } from "./cards";
+import { getPlayerOvr, POSITIONS, STAT_KEYS } from "./cards";
 import { getCardTier, RARITY_TIERS } from "./rarity";
 import type { Player, Stats, TierBand } from "./types";
 
@@ -6,7 +6,7 @@ export const PROFILE_CARD_PATH = "/api/profile/card";
 export const PROFILE_NAME_MAX = 24;
 export const favoritePath = (playerId: string) => `/api/favorites/${encodeURIComponent(playerId)}`;
 
-export type ProfileCard = { name: string; hero: string; stats: Stats };
+export type ProfileCard = { name: string; hero: string; position?: string; stats: Stats };
 
 export type ProfileCardVersion = { id: number; card: ProfileCard; updatedAt: number };
 
@@ -18,8 +18,9 @@ export const profileUrl = (key: string) => `/u/${key}`;
 
 export function parseProfileCard(input: unknown): ProfileCard | null {
   if (!input || typeof input !== "object") return null;
-  const { name, hero, stats } = input as Partial<Record<keyof ProfileCard, unknown>>;
+  const { name, hero, position, stats } = input as Partial<Record<keyof ProfileCard, unknown>>;
   if (typeof name !== "string" || typeof hero !== "string" || !stats || typeof stats !== "object") return null;
+  if (position !== undefined && (typeof position !== "string" || !POSITIONS.includes(position))) return null;
   const cleanName = name.trim();
   const cleanHero = hero.trim();
   if (!cleanName || cleanName.length > PROFILE_NAME_MAX || !cleanHero || cleanHero.length > 40) return null;
@@ -28,12 +29,13 @@ export function parseProfileCard(input: unknown): ProfileCard | null {
   return {
     name: cleanName,
     hero: cleanHero,
+    ...(position !== undefined && { position }),
     stats: Object.fromEntries(STAT_KEYS.map((k) => [k, values[k]])) as Stats,
   };
 }
 
 export function profilePlayer(card: ProfileCard): Player {
-  return { id: "profile", teamId: "", position: "Flex", c1: "#27272a", c2: "#18181b", history: [], ...card };
+  return { id: "profile", teamId: "", c1: "#27272a", c2: "#18181b", history: [], ...card, position: card.position ?? "Flex" };
 }
 
 /** A porcentagem considera todas as cartas publicadas, incluindo versões especiais. */
