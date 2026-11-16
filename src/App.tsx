@@ -241,7 +241,7 @@ function Background() {
   );
 }
 
-const sharedProfile = () => /^\/u\/([A-Za-z0-9_-]{1,64})$/.exec(location.pathname)?.[1];
+const sharedProfile = () => /^\/u\/((?:@|%40)?[A-Za-z0-9._-]{1,64})$/.exec(location.pathname)?.[1].replace("%40", "@");
 
 function Shell() {
   const [profileId, setProfileId] = useState(sharedProfile);
@@ -287,7 +287,7 @@ function Shell() {
             ))}
           </nav>
           <LangMenu />
-          <div className="shrink-0"><Account onProfile={() => { if (me) openProfile(me.id); }} /></div>
+          <div className="shrink-0"><Account onProfile={() => { if (me) openProfile(me.handle ?? me.id); }} /></div>
         </div>
       </header>
 

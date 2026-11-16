@@ -29,16 +29,19 @@ export async function profileCard(env: Env, request: Request): Promise<Response>
   return json(await readProfile(env, user.id));
 }
 
-export async function publicProfile(env: Env, userId: string): Promise<Response> {
-  if (!/^[A-Za-z0-9_-]{1,64}$/.test(userId)) return json({ code: "not_found" }, 404);
-  const [user, card, cards] = await env.DB.batch<{ name?: string; image?: string | null; snapshot?: string; player_id?: string }>([
-    env.DB.prepare(`SELECT name, image FROM "user" WHERE id = ?`).bind(userId),
+export async function publicProfile(env: Env, key: string): Promise<Response> {
+  if (!/^@?[A-Za-z0-9._-]{1,64}$/.test(key)) return json({ code: "not_found" }, 404);
+  const userId = await env.DB.prepare("SELECT user_id FROM profile_handles WHERE handle = ?").bind(key).first<string>("user_id") ?? key;
+  const [user, card, cards] = await env.DB.batch<{ name?: string; image?: string | null; handle?: string | null; snapshot?: string; player_id?: string }>([
+    env.DB.prepare(`SELECT u.name, u.image, h.handle FROM "user" u LEFT JOIN profile_handles h ON h.user_id = u.id WHERE u.id = ?`).bind(userId),
     env.DB.prepare("SELECT snapshot FROM profile_cards WHERE user_id = ?").bind(userId),
     env.DB.prepare("SELECT player_id FROM user_cards WHERE user_id = ? ORDER BY redeemed_at DESC").bind(userId),
   ]);
   const row = user.results[0];
   if (!row) return json({ code: "not_found" }, 404);
   const result: PublicProfile = {
+    id: userId,
+    handle: row.handle ?? null,
     name: row.name!,
     image: row.image ?? null,
     card: card.results[0] ? JSON.parse(card.results[0].snapshot!) as ProfileCard : null,

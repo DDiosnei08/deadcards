@@ -64,24 +64,27 @@ export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (i
   const [editing, setEditing] = useState(false);
   const [copy, setCopy] = useState<"copied" | "copyFailed">();
   const cardRef = useRef<HTMLDivElement>(null);
-  const owner = me?.id === userId;
 
   useEffect(() => {
     const controller = new AbortController();
     profileRequest<PublicProfile>(`/api/users/${encodeURIComponent(userId)}`, { signal: controller.signal })
-      .then(setProfile)
+      .then((p) => {
+        setProfile(p);
+        if (p.handle && p.handle !== userId) history.replaceState(null, "", profileUrl(p.handle));
+      })
       .catch((e) => { if (!controller.signal.aborted) setError(issueOf(e)); });
     return () => controller.abort();
   }, [userId]);
 
   const share = () => {
-    navigator.clipboard.writeText(location.origin + profileUrl(userId))
+    navigator.clipboard.writeText(location.origin + profileUrl(profile?.handle ?? userId))
       .then(() => setCopy("copied"), () => setCopy("copyFailed"));
   };
 
   if (error) return <p role="alert" className="text-sm text-red-300">{t[error]}</p>;
   if (!profile) return <p role="status" className="text-sm text-zinc-400">{t.loading}</p>;
 
+  const owner = me?.id === profile.id;
   const owned = new Set(profile.cards);
   const cards = players.filter((p) => owned.has(p.id));
 

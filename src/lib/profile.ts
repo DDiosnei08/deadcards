@@ -10,9 +10,9 @@ export type ProfileCardVersion = { id: number; card: ProfileCard; updatedAt: num
 
 export type ProfileCardState = { history: ProfileCardVersion[] };
 
-export type PublicProfile = { name: string; image: string | null; card: ProfileCard | null; cards: string[] };
+export type PublicProfile = { id: string; handle: string | null; name: string; image: string | null; card: ProfileCard | null; cards: string[] };
 
-export const profileUrl = (userId: string) => `/u/${encodeURIComponent(userId)}`;
+export const profileUrl = (key: string) => `/u/${key}`;
 
 export function parseProfileCard(input: unknown): ProfileCard | null {
   if (!input || typeof input !== "object") return null;
