@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Card } from "../components/Card";
 import { CardExportButton } from "../components/CardExportButton";
-import { startLink, type LinkProvider } from "../lib/authClient";
 import { Range } from "../components/Range";
 import { STAT_KEYS, calculateOVR } from "../lib/cards";
 import { useData } from "../lib/data";
@@ -19,9 +18,6 @@ const S = strings({
     edit: "Editar minha carta", create: "Montar minha carta", share: "Copiar link", copied: "Link copiado.", copyFailed: "Não foi possível copiar o link.",
     noCard: "Ainda não montou uma carta.", cards: "Cartas resgatadas", noCards: "Nenhuma carta resgatada ainda.",
     not_found: "Perfil não encontrado.",
-    accounts: "Contas vinculadas", linked: "vinculada", linking: "Abrindo login…", link: (p: string) => `Vincular ${p}`,
-    accountsHint: "Seu @ vem da Twitch ou do canal do YouTube. Se a outra conta já tiver um perfil aqui, as cartas dela vêm para este perfil.",
-    linkFailed: "Não foi possível iniciar a vinculação.",
     invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível carregar agora.", login: "Entre para editar sua carta.",
   },
   en: {
@@ -32,9 +28,6 @@ const S = strings({
     edit: "Edit my card", create: "Build my card", share: "Copy link", copied: "Link copied.", copyFailed: "Could not copy the link.",
     noCard: "No card built yet.", cards: "Redeemed cards", noCards: "No cards redeemed yet.",
     not_found: "Profile not found.",
-    accounts: "Linked accounts", linked: "linked", linking: "Opening sign-in…", link: (p: string) => `Link ${p}`,
-    accountsHint: "Your @ comes from Twitch or your YouTube channel. If the other account already has a profile here, its cards move to this profile.",
-    linkFailed: "Could not start linking.",
     invalid_card: "Check the name, hero and attributes.", unavailable: "Could not load right now.", login: "Sign in to edit your card.",
   },
   es: {
@@ -45,9 +38,6 @@ const S = strings({
     edit: "Editar mi carta", create: "Armar mi carta", share: "Copiar enlace", copied: "Enlace copiado.", copyFailed: "No se pudo copiar el enlace.",
     noCard: "Todavía no armó una carta.", cards: "Cartas canjeadas", noCards: "Todavía no canjeó cartas.",
     not_found: "Perfil no encontrado.",
-    accounts: "Cuentas vinculadas", linked: "vinculada", linking: "Abriendo inicio de sesión…", link: (p: string) => `Vincular ${p}`,
-    accountsHint: "Tu @ viene de Twitch o de tu canal de YouTube. Si la otra cuenta ya tiene un perfil aquí, sus cartas pasan a este perfil.",
-    linkFailed: "No se pudo iniciar la vinculación.",
     invalid_card: "Revisa el nombre, el héroe y los atributos.", unavailable: "No se pudo cargar ahora.", login: "Inicia sesión para editar tu carta.",
   },
 });
@@ -159,8 +149,6 @@ export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (i
           </div>
         </div>
       )}
-
-      {owner && me && <LinkedAccounts providers={me.providers} />}
 
       <section aria-labelledby="profile-cards-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
         <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {cards.length}</h2>
@@ -280,35 +268,3 @@ function ProfileEditor({ onSaved, onCancel }: { onSaved: (card: ProfileCard) => 
     </div>
   );
 }
-
-const PROVIDERS: { id: LinkProvider; label: string }[] = [{ id: "twitch", label: "Twitch" }, { id: "google", label: "YouTube" }];
-
-function LinkedAccounts({ providers }: { providers: string[] }) {
-  const t = useT(S);
-  const [busy, setBusy] = useState<LinkProvider>();
-  const [failed, setFailed] = useState(false);
-  const link = (provider: LinkProvider) => {
-    setBusy(provider);
-    setFailed(false);
-    startLink(provider).catch(() => { setFailed(true); setBusy(undefined); });
-  };
-  return (
-    <section aria-labelledby="profile-accounts-title" className="noir-glass flex flex-col gap-3 rounded-2xl p-4 sm:p-6">
-      <h2 id="profile-accounts-title" className="font-display text-lg font-black text-dl-text">{t.accounts}</h2>
-      <p className="text-sm text-zinc-400">{t.accountsHint}</p>
-      <ul className="flex flex-wrap gap-2">
-        {PROVIDERS.map(({ id, label }) => (
-          <li key={id}>
-            {providers.includes(id)
-              ? <span className="inline-flex min-h-11 items-center rounded-lg bg-zinc-900/70 px-4 text-sm font-semibold text-zinc-100 sm:min-h-9">{label} · {t.linked}</span>
-              : <button type="button" disabled={!!busy} onClick={() => link(id)} className={`${pill(false)} disabled:cursor-wait disabled:opacity-60`}>
-                  {busy === id ? t.linking : t.link(label)}
-                </button>}
-          </li>
-        ))}
-      </ul>
-      {failed && <p role="alert" className="text-sm text-red-300">{t.linkFailed}</p>}
-    </section>
-  );
-}
-

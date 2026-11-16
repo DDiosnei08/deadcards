@@ -18,6 +18,7 @@ import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } fr
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
 import { Profile } from "./views/Profile";
+import { Settings } from "./views/Settings";
 import { profileUrl } from "./lib/profile";
 
 const REPO = "https://github.com/hagizao/deadcards";
@@ -30,7 +31,7 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "compare" | "editor" | "privacy" | "terms" | "feedback" | "profile";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "compare" | "editor" | "privacy" | "terms" | "feedback" | "profile" | "settings";
 const TABS = ["teams", "tierlist", "collection", "compare", "redeem"] as const;
 
 const S = strings({
@@ -289,7 +290,7 @@ function Shell() {
             ))}
           </nav>
           <LangMenu />
-          <div className="shrink-0"><Account onProfile={() => { if (me) openProfile(me.handle ?? me.id); }} /></div>
+          <div className="shrink-0"><Account onProfile={() => { if (me) openProfile(me.handle ?? me.id); }} onSettings={() => setTab("settings")} /></div>
         </div>
       </header>
 
@@ -310,6 +311,7 @@ function Shell() {
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "compare" && <Compare onOpenCard={setSpotlight} />}
             {tab === "profile" && profileId && <Profile key={profileId} userId={profileId} onOpenCard={setSpotlight} />}
+            {tab === "settings" && me && <Settings />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}
