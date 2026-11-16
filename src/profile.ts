@@ -33,10 +33,11 @@ export async function publicProfile(env: Env, key: string): Promise<Response> {
   if (!/^@?[A-Za-z0-9._-]{1,64}$/.test(key)) return json({ code: "not_found" }, 404);
   const handle = key.replace(/^@/, "");
   const userId = await env.DB.prepare("SELECT user_id FROM profile_handles WHERE handle = ?").bind(handle).first<string>("user_id") ?? handle;
-  const [user, card, cards] = await env.DB.batch<{ name?: string; image?: string | null; handle?: string | null; snapshot?: string; player_id?: string }>([
+  const [user, card, cards, favorites] = await env.DB.batch<{ name?: string; image?: string | null; handle?: string | null; snapshot?: string; player_id?: string }>([
     env.DB.prepare(`SELECT u.name, u.image, h.handle FROM "user" u LEFT JOIN profile_handles h ON h.user_id = u.id WHERE u.id = ?`).bind(userId),
     env.DB.prepare("SELECT snapshot FROM profile_cards WHERE user_id = ?").bind(userId),
     env.DB.prepare("SELECT player_id FROM user_cards WHERE user_id = ? ORDER BY redeemed_at DESC").bind(userId),
+    favoritesQuery(env, userId),
   ]);
   const row = user.results[0];
   if (!row) return json({ code: "not_found" }, 404);
@@ -47,6 +48,30 @@ export async function publicProfile(env: Env, key: string): Promise<Response> {
     image: row.image ?? null,
     card: card.results[0] ? JSON.parse(card.results[0].snapshot!) as ProfileCard : null,
     cards: cards.results.map((r) => r.player_id!),
+    favorites: favorites.results.map((r) => r.player_id!),
   };
   return Response.json(result, { headers: { "cache-control": "no-store" } });
+}
+
+const favoritesQuery = (env: Env, userId: string) =>
+  env.DB.prepare("SELECT player_id FROM user_favorites WHERE user_id = ? ORDER BY created_at DESC").bind(userId);
+
+export async function favorite(env: Env, request: Request, playerId: string): Promise<Response> {
+  const user = await currentUser(env, request);
+  if (!user) return json({ code: "login" }, 401);
+  if (request.method !== "PUT" && request.method !== "DELETE") return json({ code: "method" }, 405);
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) return json({ code: "origin" }, 403);
+
+  if (request.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM user_favorites WHERE user_id = ? AND player_id = ?").bind(user.id, playerId).run();
+  } else {
+    const { meta } = await env.DB.prepare("INSERT OR IGNORE INTO user_favorites (user_id, player_id) SELECT user_id, player_id FROM user_cards WHERE user_id = ? AND player_id = ?")
+      .bind(user.id, playerId).run();
+    if (!meta.changes && !(await env.DB.prepare("SELECT 1 FROM user_favorites WHERE user_id = ? AND player_id = ?").bind(user.id, playerId).first())) {
+      return json({ code: "not_owned" }, 404);
+    }
+  }
+  const { results } = await favoritesQuery(env, user.id).all<{ player_id: string }>();
+  return json({ favorites: results.map((r) => r.player_id) });
 }

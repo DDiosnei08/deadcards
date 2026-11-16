@@ -4,6 +4,7 @@ import type { Player, Stats, TierBand } from "./types";
 
 export const PROFILE_CARD_PATH = "/api/profile/card";
 export const PROFILE_NAME_MAX = 24;
+export const favoritePath = (playerId: string) => `/api/favorites/${encodeURIComponent(playerId)}`;
 
 export type ProfileCard = { name: string; hero: string; stats: Stats };
 
@@ -11,7 +12,7 @@ export type ProfileCardVersion = { id: number; card: ProfileCard; updatedAt: num
 
 export type ProfileCardState = { history: ProfileCardVersion[] };
 
-export type PublicProfile = { id: string; handle: string | null; name: string; image: string | null; card: ProfileCard | null; cards: string[] };
+export type PublicProfile = { id: string; handle: string | null; name: string; image: string | null; card: ProfileCard | null; cards: string[]; favorites: string[] };
 
 export const profileUrl = (key: string) => `/u/${key}`;
 
