@@ -12,6 +12,7 @@ import { Login } from "./views/Login";
 import { Account } from "./components/Account";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
+import { Compare } from "./views/Compare";
 import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } from "./lib/i18n";
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
@@ -26,12 +27,12 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "editor" | "privacy" | "terms" | "feedback";
-const TABS = ["teams", "tierlist", "collection", "redeem"] as const;
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "compare" | "editor" | "privacy" | "terms" | "feedback";
+const TABS = ["teams", "tierlist", "collection", "compare", "redeem"] as const;
 
 const S = strings({
   pt: {
-    tabs: { teams: "Times", tierlist: "Tier List", collection: "Coleção", redeem: "Resgatar", editor: "Editor" },
+    tabs: { teams: "Times", tierlist: "Tier List", collection: "Coleção", compare: "Comparar", redeem: "Resgatar", editor: "Editor" },
     mainNav: "Navegação principal",
     projectLinks: "Links do projeto",
     language: "Idioma",
@@ -48,7 +49,7 @@ const S = strings({
     rmClose: "Fechar aviso",
   },
   en: {
-    tabs: { teams: "Teams", tierlist: "Tier List", collection: "Collection", redeem: "Redeem", editor: "Editor" },
+    tabs: { teams: "Teams", tierlist: "Tier List", collection: "Collection", compare: "Compare", redeem: "Redeem", editor: "Editor" },
     mainNav: "Main navigation",
     projectLinks: "Project links",
     language: "Language",
@@ -65,7 +66,7 @@ const S = strings({
     rmClose: "Dismiss notice",
   },
   es: {
-    tabs: { teams: "Equipos", tierlist: "Tier List", collection: "Colección", redeem: "Canjear", editor: "Editor" },
+    tabs: { teams: "Equipos", tierlist: "Tier List", collection: "Colección", compare: "Comparar", redeem: "Canjear", editor: "Editor" },
     mainNav: "Navegación principal",
     projectLinks: "Enlaces del proyecto",
     language: "Idioma",
@@ -295,6 +296,7 @@ function Shell() {
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
+            {tab === "compare" && <Compare onOpenCard={setSpotlight} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}
