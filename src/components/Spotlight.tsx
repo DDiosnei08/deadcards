@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
-import { getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf, useLabel } from "../lib/cards";
+import { STAT_KEYS, getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf, useLabel } from "../lib/cards";
 import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
 import { CardExportButton } from "./CardExportButton";
@@ -16,9 +16,12 @@ gsap.registerPlugin(SplitText);
 const revealed = new Set<string>();
 
 const S = strings({
-  pt: { cardOf: (name: string) => `Carta de ${name}`, close: "Fechar", special: "Especial", edit: "Editar carta", history: "Histórico de OVR", versions: "Versões", main: "Principal", version: "Versão" },
-  en: { cardOf: (name: string) => `${name}'s card`, close: "Close", special: "Special", edit: "Edit card", history: "OVR history", versions: "Versions", main: "Main", version: "Version" },
-  es: { cardOf: (name: string) => `Carta de ${name}`, close: "Cerrar", special: "Especial", edit: "Editar carta", history: "Historial de OVR", versions: "Versiones", main: "Principal", version: "Versión" },
+  pt: { cardOf: (name: string) => `Carta de ${name}`, close: "Fechar", special: "Especial", edit: "Editar carta", history: "Histórico de OVR", versions: "Versões", main: "Principal", version: "Versão",
+    stats: "Atributos", statNames: { MIR: "Mira", MAC: "Macro", SUP: "Suporte", MOV: "Movimentação", POL: "Pool de heróis", CON: "Consistência" } },
+  en: { cardOf: (name: string) => `${name}'s card`, close: "Close", special: "Special", edit: "Edit card", history: "OVR history", versions: "Versions", main: "Main", version: "Version",
+    stats: "Attributes", statNames: { MIR: "Aim", MAC: "Macro", SUP: "Support", MOV: "Movement", POL: "Hero pool", CON: "Consistency" } },
+  es: { cardOf: (name: string) => `Carta de ${name}`, close: "Cerrar", special: "Especial", edit: "Editar carta", history: "Historial de OVR", versions: "Versiones", main: "Principal", version: "Versión",
+    stats: "Atributos", statNames: { MIR: "Puntería", MAC: "Macro", SUP: "Apoyo", MOV: "Movimiento", POL: "Pool de héroes", CON: "Consistencia" } },
 });
 
 export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: string; onClose: () => void; onSwitch: (id: string) => void; onEdit?: (id: string) => void }) {
@@ -115,6 +118,19 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
             <CardExportButton key={player.id} cardRef={cardRef} name={player.name} disabled={reveal && exportReadyId !== playerId} />
             {onEdit && <button type="button" onClick={() => onEdit(player.id)} className={`${pill(true)} ml-auto hover:bg-white`}>{t.edit}</button>}
             {player.special && player.specialText && <span className="text-xs font-bold text-amber-200">✦ {player.specialText}</span>}
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-xs font-bold tracking-[0.2em] text-zinc-400 uppercase">{t.stats}</h3>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
+              {STAT_KEYS.map((k) => (
+                <div key={k} className="flex items-baseline gap-2">
+                  <dt className="font-mono font-bold text-zinc-100">{k}</dt>
+                  <dd className="min-w-0 flex-1 truncate text-zinc-400">{t.statNames[k]}</dd>
+                  <dd className="font-bold text-zinc-100 tabular-nums">{player.stats[k]}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
           <div>
