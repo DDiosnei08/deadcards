@@ -83,6 +83,8 @@ export async function accountLink(env: Env, request: Request, step: string): Pro
     env.DB.prepare(`UPDATE "account" SET "userId" = ?1, "createdAt" = ?3, "updatedAt" = ?3 WHERE "userId" = ?2`).bind(target, source, now),
     env.DB.prepare("INSERT OR IGNORE INTO user_cards (user_id, player_id, redeemed_at) SELECT ?1, player_id, redeemed_at FROM user_cards WHERE user_id = ?2").bind(target, source),
     env.DB.prepare("DELETE FROM user_cards WHERE user_id = ?").bind(source),
+    env.DB.prepare("INSERT OR IGNORE INTO user_favorites (user_id, player_id, created_at) SELECT ?1, player_id, created_at FROM user_favorites WHERE user_id = ?2").bind(target, source),
+    env.DB.prepare("DELETE FROM user_favorites WHERE user_id = ?").bind(source),
     env.DB.prepare(`UPDATE profile_card_history SET user_id = ?1 WHERE user_id = ?2 AND ${noCard}`).bind(target, source),
     env.DB.prepare(`UPDATE profile_cards SET user_id = ?1 WHERE user_id = ?2 AND ${noCard}`).bind(target, source),
     env.DB.prepare("UPDATE profile_handles SET user_id = ?1 WHERE user_id = ?2 AND NOT EXISTS (SELECT 1 FROM profile_handles WHERE user_id = ?1)").bind(target, source),
