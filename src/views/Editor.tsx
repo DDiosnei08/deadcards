@@ -272,7 +272,7 @@ function PlayerForm({ editId, onEditId }: { editId: string | null; onEditId: (id
       </div>
 
       <div className="flex justify-center lg:sticky lg:top-28">
-        <motion.div key={d.hero + (d.special ? frame.style : "")} initial={{ rotateY: -25, opacity: 0.4 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 18 }} style={{ transformPerspective: 1200 }}>
+        <motion.div key={d.hero + (d.special ? frame.style : "")} initial={{ rotateY: -25, opacity: 0.4 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} style={{ transformPerspective: 1200 }}>
           <TierPulse tier={getCardTier(preview, settings.tierConfig!)}>
             <Card player={preview} variant="editor" />
           </TierPulse>

@@ -93,7 +93,7 @@ export function TierList({ onOpenCard, onOpenTeam }: { onOpenCard: (id: string) 
                       onClick={() => onOpenCard(p.id)}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.02 }}
+                      transition={{ delay: Math.min(i, 10) * 0.02 }}
                       whileHover={{ y: -3 }}
                       className="rk-tier-item relative h-[112px] w-[92px] cursor-pointer overflow-hidden rounded-lg text-left"
                       style={rarityStyleVars(getCardTier(p, cfg)) as CSSProperties}
@@ -112,7 +112,7 @@ export function TierList({ onOpenCard, onOpenTeam }: { onOpenCard: (id: string) 
                     key={t.id}
                     type="button"
                     onClick={() => onOpenTeam(t.id)}
-                    className={`team-region-card ${regionClass(t.region)} relative flex w-64 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg border border-zinc-200/20 bg-zinc-950 p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100`}
+                    className={`team-region-card ${regionClass(t.region)} relative flex w-64 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg border border-zinc-200/20 bg-zinc-950 p-2.5 text-left transition-[translate,border-color] duration-200 hover:-translate-y-0.5 hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100`}
                   >
                     <RegionBackdrop region={t.region} />
                     <div className="relative z-10 flex w-12 shrink-0 flex-col items-center rounded-md border border-white bg-zinc-100 py-1.5 text-zinc-950 shadow-sm">

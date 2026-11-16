@@ -88,8 +88,7 @@
       .fr-run, .fr-twinkle, .fr-breathe, .fr-flame, .fr-bolt, .fr-flash, .fr-scan { animation: none !important; }
     }
     /* ---- Efeito exclusivo de CARTA ESPECIAL ---- */
-    .sp-card { animation: spGlow 3.2s ease-in-out infinite alternate; }
-    @keyframes spGlow { from { filter: drop-shadow(0 0 3px var(--rk-glow)); } to { filter: drop-shadow(0 0 16px var(--rk-glow)); } }
+    .rk-wrap.sp-card { filter: var(--card-vol) drop-shadow(0 0 10px var(--rk-glow)); }
     .sp-card-fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 6; }
     .sp-card-fx::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 42%;
       background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0) 18%, rgba(255,236,190,.40) 46%, rgba(170,225,255,.30) 56%, transparent 82%);
@@ -98,14 +97,12 @@
       background: radial-gradient(circle at 18% 0%, rgba(255,255,255,.16), transparent 55%), radial-gradient(circle at 100% 100%, rgba(255,255,255,.08), transparent 50%); }
     @keyframes spCardSweep { 0% { transform: translateX(-150%) skewX(-12deg); } 55%, 100% { transform: translateX(340%) skewX(-12deg); } }
     @keyframes spPulse { from { opacity: .35; } to { opacity: 1; } }
-    .sp-title { animation: spTitle 2.4s ease-in-out infinite alternate; }
-    @keyframes spTitle { from { text-shadow: 0 0 2px currentColor; } to { text-shadow: 0 0 14px currentColor, 0 0 2px currentColor; } }
+    .sp-title { text-shadow: 0 0 8px currentColor, 0 0 2px currentColor; }
     .sp-star { display: inline-block; animation: spStar 2.4s ease-in-out infinite alternate; }
     @keyframes spStar { from { transform: scale(.85) rotate(0deg); opacity: .75; } to { transform: scale(1.2) rotate(35deg); opacity: 1; } }
-    .special-panel { animation: spSlideIn .45s cubic-bezier(.2,.8,.2,1) both, spPanelGlow 3.2s ease-in-out .5s infinite alternate; }
-    @keyframes spPanelGlow { from { filter: brightness(1); } to { filter: brightness(1.18); } }
+    .special-panel { animation: spSlideIn .3s var(--ease-out) both; }
     @media (prefers-reduced-motion: reduce) {
-      .sp-card, .sp-card-fx::before, .sp-card-fx::after, .sp-title, .sp-star, .special-panel, .special-panel .sp-shine { animation: none !important; }
+      .sp-card-fx::before, .sp-card-fx::after, .sp-star, .special-panel, .special-panel .sp-shine { animation: none !important; }
     }
     /* ---- Purpurina saindo de trás da carta especial (modal de destaque) ---- */
     .sp-glitter { position: absolute; left: -90px; right: -90px; top: -70px; bottom: -40px; pointer-events: none; z-index: -1; }
@@ -144,16 +141,19 @@
       background: linear-gradient(135deg, rgba(var(--brand-c1), 0.62) 0%, rgba(var(--brand-c2), 0.62) 100%);
       border: 1px solid rgba(228, 228, 231, 0.3);
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 18px rgba(var(--brand-c1), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-                  border-color 0.28s ease,
-                  box-shadow 0.28s ease,
-                  background 0.28s ease;
+      transition: transform 0.2s var(--ease-out),
+                  border-color 0.2s ease,
+                  box-shadow 0.2s ease;
       user-select: none;
+    }
+
+    .brand-badge:focus-visible { transform: translateY(-1.5px) scale(1.03); }
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+      .brand-badge:hover { transform: translateY(-1.5px) scale(1.03); }
     }
 
     .brand-badge:hover,
     .brand-badge:focus-visible {
-      transform: translateY(-1.5px) scale(1.03);
       border-color: rgba(244, 244, 245, 0.78);
       background: linear-gradient(135deg, rgba(var(--brand-c1), 0.82) 0%, rgba(var(--brand-c2), 0.82) 100%);
       box-shadow: 0 0 26px rgba(var(--brand-c1), 0.45),
@@ -175,20 +175,34 @@
       padding: var(--rk-pad, 2px);
       clip-path: var(--rk-clip, polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%));
       background: var(--rk-bg, linear-gradient(145deg, rgba(244, 244, 245, 0.58), rgba(113, 113, 122, 0.2) 45%, rgba(228, 228, 231, 0.48)));
-      background-size: var(--rk-bgsize, auto);
-      animation: var(--rk-anim, none);
-      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.78));
-      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-                  filter 0.32s ease,
-                  background 0.32s ease;
+      transition: transform 0.2s var(--ease-out);
     }
 
     .deadlock-card-shell:hover {
-      transform: translateY(-6px) scale(1.018);
       background: var(--rk-bg-h, linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(161, 161, 170, 0.35) 45%, rgba(244, 244, 245, 0.8)));
-      background-size: var(--rk-bgsize, auto);
-      filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 18px rgba(228, 228, 231, 0.24));
     }
+
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+      .deadlock-card-shell:hover { transform: translateY(-6px) scale(1.018); }
+      .deadlock-card-shell:hover .hero-bg-wrap { transform: scale(1.04); }
+    }
+
+    /* metal animado: gradiente maior deslizando por transform em vez de background-position (sem repaint por frame) */
+    .deadlock-card-shell::before {
+      content: "";
+      display: var(--rk-fx, none);
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: var(--rk-sz, 100%);
+      height: var(--rk-sz, 100%);
+      background: var(--rk-bg);
+      transform: translateY(-50%);
+      animation: var(--rk-anim, none);
+      pointer-events: none;
+    }
+
+    .deadlock-card-shell:hover::before { background: var(--rk-bg-h); }
 
     .deadlock-card-inner {
       position: relative;
@@ -232,7 +246,7 @@
       /* mesma espessura da logo-3d (index.css); o drop-shadow da .deadlock-card-shell é cortado pelo próprio clip-path, por isso a sombra fica aqui */
       --card-vol: drop-shadow(0 1px 0 #b8a98f) drop-shadow(0 2px 0 #8f8370) drop-shadow(0 3px 0 #6b6254) drop-shadow(0 16px 20px rgb(0 0 0 / 0.6));
       filter: var(--card-vol) drop-shadow(0 0 var(--rk-gr, 0px) var(--rk-glow, transparent));
-      transition: filter 0.32s ease;
+      transition: filter 0.2s ease;
     }
     .rk-wrap:hover {
       filter: var(--card-vol) drop-shadow(0 0 calc(var(--rk-gr, 0px) * 1.9) var(--rk-glow, transparent));
@@ -341,15 +355,14 @@
       50%      { opacity: 1; }
     }
     @keyframes rk-shift {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+      to { transform: translate(var(--rk-dx), -50%); }
     }
     @keyframes rk-glint {
       0%, 55% { transform: translateX(-130%); }
       100% { transform: translateX(130%); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .deadlock-card-shell { animation: none !important; }
+      .deadlock-card-shell::before { animation: none !important; }
       .rk-glint, .rk-particles { animation: none !important; display: none; }
       .rk-ring-pulse { animation: none !important; }
     }
@@ -363,38 +376,8 @@
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.8), inset 0 0 14px rgba(255, 255, 255, 0.12);
     }
 
-    .hero-sprite-crop {
-      width: 100%;
-      height: 100%;
-      background-repeat: no-repeat;
-      transition: transform 0.3s ease;
-    }
-
-    .deadlock-card-shell:hover .hero-sprite-crop {
-      transform: scale(1.05);
-    }
-
-    /* Fundo completo da carta com a arte do Herói de Assinatura */
-    .card-hero-bg-img {
-      position: absolute;
-      max-width: none !important;
-      pointer-events: none;
-      user-select: none;
-      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
-      filter: contrast(1.08) saturate(1.12);
-    }
-
     .hero-bg-wrap {
-      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .deadlock-card-shell:hover .hero-bg-wrap {
-      transform: scale(1.04);
-    }
-
-    .deadlock-card-shell:hover .card-hero-bg-img {
-      transform: scale(1.04);
-      filter: contrast(1.12) saturate(1.18);
+      transition: transform 0.25s var(--ease-out);
     }
 
     /* Botão interativo do logo e nome do time (expandir/recolher elenco) */
@@ -405,8 +388,15 @@
 
     .team-header-trigger:focus-visible { outline: 2px solid #f4f4f5; outline-offset: 4px; border-radius: 0.5rem; }
 
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+      .team-header-trigger:hover .team-logo-frame { transform: scale(1.06); }
+      .team-ovr-chip:not(.team-ovr-chip--stack):hover { transform: translateY(-1px) scale(1.05); }
+      .home-hero-arrow:hover { transform: translateY(-50%) scale(1.07); }
+      .home-hero-pick:hover { transform: translateY(-1px); }
+      input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.18); }
+    }
+
     .team-header-trigger:hover .team-logo-frame {
-      transform: scale(1.06);
       border-color: rgba(255, 255, 255, 0.55);
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.35),
@@ -524,7 +514,6 @@
       background: linear-gradient(90deg, transparent, var(--team-accent, rgba(250, 204, 21, 0.6)), transparent);
     }
     .team-ovr-chip:hover {
-      transform: translateY(-1px) scale(1.05);
       border-color: rgba(255, 255, 255, 0.5);
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.4),
@@ -563,7 +552,6 @@
       padding: 0.45rem 0.8rem 0.4rem;
       cursor: inherit;
     }
-    .team-ovr-chip--stack:hover { transform: none; }
     .team-ovr-chip--stack .team-ovr-num { font-size: 1.75rem; }
     .team-ovr-chip--stack .team-ovr-lbl { padding-left: 0; border-left: 0; letter-spacing: 0.3em; margin-right: -0.3em; }
     @media (min-width: 640px) { .team-ovr-chip--stack .team-ovr-num { font-size: 2rem; } }
@@ -603,32 +591,12 @@
 
     .card-hover-cta {
       transform: translateY(8px) scale(0.96);
-      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, background 0.25s ease;
+      transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease, background 0.25s ease;
     }
 
     .deadlock-card-shell:hover .card-hover-cta,
     .deadlock-card-shell:focus-within .card-hover-cta {
       transform: translateY(0) scale(1);
-    }
-
-    /* Animação de Salto para a Carta em Evidência (Spotlight Modal) */
-    @keyframes cardSpotlightPop {
-      0% {
-        opacity: 0;
-        transform: scale(0.76) translateY(26px);
-      }
-      65% {
-        opacity: 1;
-        transform: scale(1.035) translateY(-4px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-
-    .spotlight-card-animate {
-      animation: cardSpotlightPop 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     /* ==========================================================================
@@ -782,10 +750,6 @@
       transition: transform 0.15s ease;
     }
 
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.18);
-    }
-
     input[type="range"]::-moz-range-thumb {
       width: 16px;
       height: 16px;
@@ -833,7 +797,7 @@
     .home-hero-arrow--l { left: 8px; }
     .home-hero-arrow--r { right: 8px; }
     .home-hero-box:hover .home-hero-arrow, .home-hero-arrow:focus-visible { opacity: 0.8; }
-    .home-hero-arrow:hover { opacity: 1 !important; background: rgba(9, 9, 11, 0.72); border-color: rgba(244, 244, 245, 0.6); transform: translateY(-50%) scale(1.07); }
+    .home-hero-arrow:hover { opacity: 1 !important; background: rgba(9, 9, 11, 0.72); border-color: rgba(244, 244, 245, 0.6); }
     .home-hero-arrow:active { transform: translateY(-50%) scale(0.96); }
     .home-hero-arrow:focus-visible { outline: 2px solid #f4f4f5; outline-offset: 2px; }
     @media (hover: none) { .home-hero-arrow { opacity: 0.55; } }
@@ -846,14 +810,12 @@
     }
     .home-hero-box:hover .home-hero-tag { opacity: 0.85; }
     @media (hover: none) { .home-hero-tag { opacity: 0.7; } }
-    @keyframes homeHeroIn { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: scale(1); } }
-    .home-hero-anim { animation: homeHeroIn 0.35s ease; }
     .home-hero-pick {
       padding: 0; aspect-ratio: 1; overflow: hidden; border-radius: 8px; cursor: pointer;
       background: #09090b; border: 2px solid transparent; opacity: 0.72;
       transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
     }
-    .home-hero-pick:hover { opacity: 1; transform: translateY(-1px); }
+    .home-hero-pick:hover { opacity: 1; }
     .home-hero-pick.is-sel { opacity: 1; border-color: #f4f4f5; }
     .home-hero-pick img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 

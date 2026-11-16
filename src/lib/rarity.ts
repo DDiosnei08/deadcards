@@ -213,7 +213,12 @@ export function getCardTier(p: Player, cfg: TierBand[]): Tier {
     topPad: pr.topPad, glint: pr.glint, noSweep: !!pr.noSweep, fx: pr.fx };
 }
 
-const clipCSS = (lvl: number) => "polygon(" + SHAPES[lvl].map(([x, y]) => `${x}% ${y}%`).join(", ") + ")";
+const shiftVars = (size: number, seconds: number) => ({
+  "--rk-fx": "block", "--rk-sz": `${size}%`, "--rk-dx": `${((100 - size) / size * 100).toFixed(2)}%`,
+  "--rk-anim": `rk-shift ${seconds}s ease-in-out infinite alternate`,
+});
+
+const clipCSS =(lvl: number) => "polygon(" + SHAPES[lvl].map(([x, y]) => `${x}% ${y}%`).join(", ") + ")";
 
 export function rarityStyleVars(t: Tier): Record<string, string> {
   if (t.custom) {
@@ -222,14 +227,14 @@ export function rarityStyleVars(t: Tier): Record<string, string> {
       "--rk-clip": clipCSS(t.lvl), "--rk-pad": `${t.pad}px`, "--rk-bg": pr.bg(t), "--rk-bg-h": pr.bgH(t),
       "--rk-glow": hexToRgba(t.c, 0.6), "--rk-gr": `${pr.glow}px`,
     };
-    if (pr.anim) Object.assign(v, { "--rk-bgsize": "300% 300%", "--rk-anim": `rk-shift ${pr.anim}s ease-in-out infinite alternate` });
+    if (pr.anim) Object.assign(v, shiftVars(300, pr.anim));
     return v;
   }
   const v: Record<string, string> = {
     "--rk-clip": clipCSS(t.lvl), "--rk-pad": `${PAD[t.lvl]}px`, "--rk-bg": metal(t), "--rk-bg-h": metalH(t),
     "--rk-glow": hexToRgba(t.c, 0.55), "--rk-gr": `${GLOW_R[t.lvl]}px`,
   };
-  if (t.lvl >= 2) Object.assign(v, { "--rk-bgsize": "260% 260%", "--rk-anim": `rk-shift ${t.lvl >= 3 ? 5 : 9}s ease-in-out infinite alternate` });
+  if (t.lvl >= 2) Object.assign(v, shiftVars(260, t.lvl >= 3 ? 5 : 9));
   return v;
 }
 

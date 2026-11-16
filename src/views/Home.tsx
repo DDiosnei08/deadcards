@@ -8,6 +8,7 @@ import { RegionBackdrop } from "../components/RegionBackdrop";
 import { TeamLogo3D } from "../components/TeamLogo3D";
 import { usePointerTilt } from "../lib/tilt";
 import { Icon } from "../components/Icon";
+import { easeOut } from "../lib/ui";
 
 const S = strings({
   pt: { featured: "Herói em destaque", prev: "Herói anterior", next: "Próximo herói", none: "Nenhum time cadastrado ainda.", players: (n: number) => `${n} ${n === 1 ? "jogador" : "jogadores"}` },
@@ -55,7 +56,7 @@ export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.25, ease: easeOut }}
               className="absolute inset-0 size-full object-cover object-center select-none"
             />
           )}
@@ -107,7 +108,7 @@ function TeamRow({ r, idx, tier, meta, onOpen }: {
       {...tiltHandlers}
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: idx * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ delay: Math.min(idx, 8) * 0.05, duration: 0.25, ease: easeOut }}
       whileHover="hover"
       variants={{ hover: { y: -2 } }}
       className={`home-team-box noir-glass team-region-card ${regionClass(r.team.region)} relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl p-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-zinc-100 sm:gap-5 sm:px-5`}

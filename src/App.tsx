@@ -18,6 +18,7 @@ import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } fr
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
 import { Profile } from "./views/Profile";
+import { easeOut } from "./lib/ui";
 import { Settings } from "./views/Settings";
 import { profileUrl } from "./lib/profile";
 
@@ -300,13 +301,11 @@ function Shell() {
 
       <ReducedMotionNotice />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-        <AnimatePresence mode="wait">
-          <motion.div
+        <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15, ease: easeOut }}
           >
             {tab === "home" && <Home onOpenTeam={openTeam} />}
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
@@ -320,7 +319,6 @@ function Shell() {
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}
           </motion.div>
-        </AnimatePresence>
       </main>
 
       <footer className="mt-6 border-t border-zinc-200/10">

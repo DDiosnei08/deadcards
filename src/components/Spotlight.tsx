@@ -10,7 +10,7 @@ import { Card } from "./Card";
 import { CardExportButton } from "./CardExportButton";
 import { TrendBadge } from "./TrendBadge";
 import { Icon } from "./Icon";
-import { pill } from "../lib/ui";
+import { easeOut, pill } from "../lib/ui";
 
 gsap.registerPlugin(SplitText);
 const revealed = new Set<string>();
@@ -88,13 +88,13 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
     >
       <motion.div
         className="noir-glass-strong flex max-h-[92dvh] w-full max-w-4xl flex-col items-center gap-8 overflow-y-auto rounded-3xl p-4 sm:p-8 md:flex-row md:items-start"
-        initial={{ scale: 0.8, y: 30, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <motion.div key={player.id} className="relative max-w-full" initial={reveal ? false : { rotateY: -90, opacity: 0 }} animate={{ rotateY: 0, opacity: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ transformPerspective: 1200 }}>
+        <motion.div key={player.id} className="relative max-w-full" initial={reveal ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: easeOut }}>
           {reveal && (
             <div ref={flashRef} aria-hidden="true" className="pointer-events-none absolute -inset-16 rounded-full opacity-0" style={{ background: `radial-gradient(circle, ${tier.hi} 0%, ${tier.c}99 30%, transparent 68%)` }} />
           )}
@@ -109,7 +109,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
               <h2 className="font-display text-3xl font-black tracking-[0.12em] text-dl-text uppercase"><span ref={nameRef} key={player.id + player.name}>{player.name}</span></h2>
               <p className="mt-1 text-sm text-zinc-300">{label(team.name)} ({team.tag}) · {label(player.position || "Flex")} · {player.hero}</p>
             </div>
-            <button type="button" onClick={onClose} aria-label={t.close} className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-800/60 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:size-9"><Icon name="x" /></button>
+            <button type="button" onClick={onClose} aria-label={t.close} className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-800/60 text-zinc-300 transition hover:bg-zinc-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:size-9"><Icon name="x" /></button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

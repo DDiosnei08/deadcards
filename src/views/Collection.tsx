@@ -4,7 +4,7 @@ import { useData } from "../lib/data";
 import { getPlayerOvr, isMainCard, teamOf, useLabel } from "../lib/cards";
 import { Card } from "../components/Card";
 import { strings, useT } from "../lib/i18n";
-import { field, pageTitle, primaryBtn } from "../lib/ui";
+import { easeOut, field, pageTitle, primaryBtn } from "../lib/ui";
 
 type SortKey = "ovr" | "name" | "MIR" | "MAC" | "SUP" | "MOV" | "POL" | "CON";
 const PAGE = 24;
@@ -127,7 +127,7 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
       <motion.div layout className="flex flex-wrap justify-center gap-6 sm:justify-start">
         <AnimatePresence mode="popLayout">
           {list.slice(0, limit).map((p) => (
-            <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.3 }}>
+            <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.2, ease: easeOut }}>
               <Card player={p} variant="medium" onOpen={() => onOpenCard(p.id)} />
             </motion.div>
           ))}

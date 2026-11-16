@@ -11,7 +11,7 @@ import { TrendBadge } from "../components/TrendBadge";
 import { Card } from "../components/Card";
 
 import { Icon } from "../components/Icon";
-import { pageTitle, pill } from "../lib/ui";
+import { easeOut, pageTitle, pill } from "../lib/ui";
 
 const S = strings({
   pt: {
@@ -98,7 +98,7 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
             <TeamHeader team={team} open={isOpen} onClick={() => setOpen((s) => ({ ...s, [team.id]: !s[team.id] }))}>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="team-title-text font-display text-xl/tight font-extrabold tracking-wider text-dl-text uppercase transition-all duration-200 sm:text-2xl/tight">{team.name}</h2>
+                  <h2 className="team-title-text font-display text-xl/tight font-extrabold tracking-wider text-dl-text uppercase transition-[color,text-shadow] duration-200 sm:text-2xl/tight">{team.name}</h2>
                   <span className="team-ovr-chip">
                     <span className="team-ovr-num">{o.count ? o.rounded : "--"}</span>
                     <span className="team-ovr-lbl">OVR</span>
@@ -117,7 +117,7 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.25, ease: easeOut }}
                   className="overflow-hidden"
                 >
                   <div className="mt-4 flex flex-wrap justify-center gap-6 border-t border-zinc-200/15 pt-6 sm:justify-start">
@@ -125,7 +125,7 @@ export function Teams({ focusTeamId, onOpenCard }: { focusTeamId?: string; onOpe
                       <div className="w-full rounded-xl border border-dashed border-zinc-200/20 bg-black/25 py-8 text-center text-xs text-zinc-300">{t.emptyRoster}</div>
                     )}
                     {roster.map((p, i) => (
-                      <motion.div key={p.id} initial={{ opacity: 0, y: 24, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+                      <motion.div key={p.id} initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: Math.min(i, 5) * 0.04, duration: 0.25, ease: easeOut }}>
                         <Card player={p} variant={size} onOpen={() => onOpenCard(p.id)} />
                       </motion.div>
                     ))}
