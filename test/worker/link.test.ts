@@ -51,7 +51,7 @@ describe("juntar contas", () => {
     await saveCard(b.cookie, "Card B");
 
     const link = await start(a.cookie);
-    const res = await post("finish", `${b.cookie}; ${link}`);
+    const res = await post("finish", `${b.cookie}; ${link}`, { confirm: true });
     expect(await res.json()).toEqual({ merged: true, provider: "google", profile: "victor" });
     expect(res.headers.getSetCookie().some((c) => c.startsWith("better-auth.session_token=;"))).toBe(true);
 
@@ -65,11 +65,31 @@ describe("juntar contas", () => {
     expect(firstLogin).toBe("twitch");
   });
 
-  it("traz a carta da outra conta quando quem iniciou ainda não tem", async () => {
+  it("pede confirmação para juntar uma conta que já existia e recusa uma que já junta dois logins", async () => {
     const a = await login("a");
+    const b = await login("Irmão", ["google"]);
+    const both = await login("c", ["twitch", "google"]);
+    await seedPlayer("p1");
+    await env.DB.prepare("INSERT INTO user_cards (user_id, player_id) VALUES (?, 'p1')").bind(b.userId).run();
+    const link = await start(a.cookie);
+
+    const ask = await post("finish", `${b.cookie}; ${link}`);
+    expect(ask.status).toBe(409);
+    expect(await ask.json()).toEqual({ code: "confirm", name: "Irmão", cards: 1 });
+    expect(ask.headers.getSetCookie()).toEqual([]);
+    expect(await env.DB.prepare(`SELECT 1 FROM "user" WHERE id = ?`).bind(b.userId).first()).not.toBeNull();
+
+    const refused = await post("finish", `${both.cookie}; ${link}`, { confirm: true });
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({ code: "already_linked" });
+    expect(await ids(`SELECT "providerId" AS v FROM "account" WHERE "userId" = ?`, a.userId)).toEqual(["twitch"]);
+  });
+
+  it("junta sem perguntar a conta criada no login da vinculação e traz a carta dela", async () => {
+    const a = await login("a");
+    const link = await start(a.cookie, "twitch");
     const b = await login("b", ["google"]);
     await saveCard(b.cookie, "Card B");
-    const link = await start(a.cookie, "twitch");
     expect(await (await post("finish", `${b.cookie}; ${link}`)).json()).toMatchObject({ merged: true, provider: "twitch" });
     expect(await SELF.fetch(`http://test/api/users/${a.userId}`).then((r) => r.json())).toMatchObject({ card: { name: "Card B" } });
     expect(await ids("SELECT json_extract(snapshot, '$.name') AS v FROM profile_card_history WHERE user_id = ?", a.userId)).toEqual(["Card B"]);

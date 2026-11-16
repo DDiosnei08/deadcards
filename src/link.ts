@@ -28,7 +28,7 @@ async function readLink(env: Env, request: Request) {
   const [userId, provider, exp, mac] = readCookie(request, COOKIE)?.split(".") ?? [];
   if (!userId || !provider || !exp || !mac || Number(exp) < Date.now()) return null;
   if (mac !== await sign(env, `${userId}.${provider}.${exp}`)) return null;
-  return { userId, provider };
+  return { userId, provider, startedAt: Number(exp) - TTL_MS };
 }
 
 const json = (body: unknown, status = 200, cookies: string[] = []) => {
@@ -62,6 +62,18 @@ export async function accountLink(env: Env, request: Request, step: string): Pro
   const source = user.id;
   if (source === target) return json({ merged: false, profile: await handleOf(env, target) ?? target }, 200, [clear]);
   if (!await env.DB.prepare(`SELECT 1 FROM "user" WHERE id = ?`).bind(target).first()) return json({ code: "expired" }, 400, [clear]);
+
+  const [created, logins, cards] = await env.DB.batch<{ v: string | number }>([
+    env.DB.prepare(`SELECT "createdAt" AS v FROM "user" WHERE id = ?`).bind(source),
+    env.DB.prepare(`SELECT COUNT(DISTINCT "providerId") AS v FROM "account" WHERE "userId" = ?`).bind(source),
+    env.DB.prepare("SELECT COUNT(*) AS v FROM user_cards WHERE user_id = ?").bind(source),
+  ]);
+  if (Number(logins.results[0]?.v) > 1) return json({ code: "already_linked" }, 409, [clear]);
+  // The provider can skip its login screen, so an account that existed before this link started may belong to
+  // someone else signed in on the same browser: it only joins after the user confirms.
+  const fresh = Date.parse(String(created.results[0]?.v)) >= link.startedAt;
+  const body = await request.json<{ confirm?: unknown }>().catch(() => null);
+  if (!fresh && body?.confirm !== true) return json({ code: "confirm", name: user.name, cards: Number(cards.results[0]?.v) }, 409);
 
   const now = new Date().toISOString();
   const noCard = "NOT EXISTS (SELECT 1 FROM profile_cards WHERE user_id = ?1)";

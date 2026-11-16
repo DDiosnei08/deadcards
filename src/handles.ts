@@ -21,8 +21,8 @@ async function fetchHandle(env: Env, providerId: string, token: string): Promise
   return null;
 }
 
-// One namespace for both providers: a nick held by another user only moves when it comes from the same
-// provider (a recycled Twitch login or YouTube handle). Across providers it stays put until the accounts are joined.
+// One namespace for both providers: a nick held by another user moves when it comes from the same provider
+// (a recycled Twitch login or YouTube handle) or from Twitch, so a YouTube channel can't squat a streamer's nick.
 export async function syncHandle(env: Env, account: LinkedAccount) {
   try {
     if (!account.accessToken) return;
@@ -31,7 +31,7 @@ export async function syncHandle(env: Env, account: LinkedAccount) {
     const handle = await fetchHandle(env, account.providerId, account.accessToken);
     if (!handle) return;
     const holder = await env.DB.prepare("SELECT user_id, provider FROM profile_handles WHERE handle = ?").bind(handle).first<{ user_id: string; provider: string }>();
-    if (holder && holder.user_id !== account.userId && holder.provider !== account.providerId) return;
+    if (holder && holder.user_id !== account.userId && holder.provider !== account.providerId && account.providerId !== "twitch") return;
     await env.DB.batch([
       env.DB.prepare("DELETE FROM profile_handles WHERE handle = ? AND user_id <> ?").bind(handle, account.userId),
       env.DB.prepare(`INSERT INTO profile_handles (user_id, handle, provider) VALUES (?, ?, ?)

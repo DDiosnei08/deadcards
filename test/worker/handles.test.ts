@@ -16,11 +16,13 @@ function mockProviders(twitch: unknown, youtube: unknown) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("handle do perfil", () => {
-  it("usa o nick da Twitch e o @ do YouTube no mesmo espaço, sem tomar o @ de outro provedor", async () => {
+  it("usa o nick da Twitch e o @ do YouTube no mesmo espaço, e a Twitch fica com o @ disputado", async () => {
     const { userId: streamer } = await login("Hagizao");
     const { userId: youtuber } = await login("Victor Barroso", ["google"]);
     const { userId: other } = await login("Outro", ["google"]);
     mockProviders("hagizao", "@Hagizao");
+    await syncHandle(env, { userId: youtuber, providerId: "google", accessToken: "t" });
+    expect(await handleOf(env, youtuber)).toBe("hagizao");
     await syncHandle(env, { userId: streamer, providerId: "twitch", accessToken: "t" });
     await syncHandle(env, { userId: youtuber, providerId: "google", accessToken: "t" });
     mockProviders("x", "@outro.canal");

@@ -10,7 +10,7 @@ import { Redeem } from "./views/Redeem";
 import { Spotlight } from "./components/Spotlight";
 import { Login } from "./views/Login";
 import { Account } from "./components/Account";
-import { finishLink } from "./lib/authClient";
+import { finishLink, type LinkResult } from "./lib/authClient";
 import { Editor } from "./views/Editor";
 import { Legal } from "./views/Legal";
 import { Compare } from "./views/Compare";
@@ -258,7 +258,11 @@ function Shell() {
   const editCard = (id: string) => { setSpotlight(null); setEditId(id); setTab("editor"); };
   const openProfile = (id: string) => { setProfileId(id); setTab("profile"); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, profileId]);
-  useEffect(() => { if (new URLSearchParams(location.search).get("link") === "finish") void finishLink(); }, []);
+  const [linkResult, setLinkResult] = useState<LinkResult>();
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("link") !== "finish") return;
+    void finishLink().then((result) => { if (result) { setLinkResult(result); setTab("settings"); } });
+  }, []);
   useEffect(() => {
     const path = tab === "profile" && profileId ? profileUrl(profileId) : "/";
     if (location.pathname !== path) history.replaceState(null, "", path);
@@ -311,7 +315,7 @@ function Shell() {
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "compare" && <Compare onOpenCard={setSpotlight} />}
             {tab === "profile" && profileId && <Profile key={profileId} userId={profileId} onOpenCard={setSpotlight} onRedeem={() => setTab("redeem")} />}
-            {tab === "settings" && me && <Settings />}
+            {tab === "settings" && me && <Settings link={linkResult} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}
