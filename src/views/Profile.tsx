@@ -6,6 +6,7 @@ import { STAT_KEYS, calculateOVR } from "../lib/cards";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
 import { PROFILE_CARD_PATH, PROFILE_NAME_MAX, profilePlayer, profileUrl, type ProfileCard, type ProfileCardState, type PublicProfile } from "../lib/profile";
+import { getCardTier } from "../lib/rarity";
 import { field, pageTitle, pill, primaryBtn } from "../lib/ui";
 
 const S = strings({
@@ -14,7 +15,7 @@ const S = strings({
     hint: "Defina como você se vê no jogo. A carta aparece só no seu perfil, fora da tier list.",
     save: "Salvar carta", saving: "Salvando…", cancel: "Cancelar", unsaved: "Alterações não salvas.",
     loading: "Carregando perfil…", history: "Histórico de versões",
-    edit: "Editar carta", create: "Montar minha carta", share: "Copiar link", copied: "Link copiado.", copyFailed: "Não foi possível copiar o link.",
+    edit: "Editar minha carta", create: "Montar minha carta", share: "Copiar link", copied: "Link copiado.", copyFailed: "Não foi possível copiar o link.",
     noCard: "Ainda não montou uma carta.", cards: "Cartas resgatadas", noCards: "Nenhuma carta resgatada ainda.",
     not_found: "Perfil não encontrado.",
     invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível carregar agora.", login: "Entre para editar sua carta.",
@@ -24,7 +25,7 @@ const S = strings({
     hint: "Set how you see yourself in game. The card only shows on your profile, outside the tier list.",
     save: "Save card", saving: "Saving…", cancel: "Cancel", unsaved: "Unsaved changes.",
     loading: "Loading profile…", history: "Version history",
-    edit: "Edit card", create: "Build my card", share: "Copy link", copied: "Link copied.", copyFailed: "Could not copy the link.",
+    edit: "Edit my card", create: "Build my card", share: "Copy link", copied: "Link copied.", copyFailed: "Could not copy the link.",
     noCard: "No card built yet.", cards: "Redeemed cards", noCards: "No cards redeemed yet.",
     not_found: "Profile not found.",
     invalid_card: "Check the name, hero and attributes.", unavailable: "Could not load right now.", login: "Sign in to edit your card.",
@@ -34,7 +35,7 @@ const S = strings({
     hint: "Define cómo te ves en el juego. La carta solo aparece en tu perfil, fuera de la tier list.",
     save: "Guardar carta", saving: "Guardando…", cancel: "Cancelar", unsaved: "Cambios sin guardar.",
     loading: "Cargando perfil…", history: "Historial de versiones",
-    edit: "Editar carta", create: "Armar mi carta", share: "Copiar enlace", copied: "Enlace copiado.", copyFailed: "No se pudo copiar el enlace.",
+    edit: "Editar mi carta", create: "Armar mi carta", share: "Copiar enlace", copied: "Enlace copiado.", copyFailed: "No se pudo copiar el enlace.",
     noCard: "Todavía no armó una carta.", cards: "Cartas canjeadas", noCards: "Todavía no canjeó cartas.",
     not_found: "Perfil no encontrado.",
     invalid_card: "Revisa el nombre, el héroe y los atributos.", unavailable: "No se pudo cargar ahora.", login: "Inicia sesión para editar tu carta.",
@@ -57,7 +58,7 @@ function issueOf(error: unknown): Issue {
 
 export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (id: string) => void }) {
   const t = useT(S);
-  const { me, players } = useData();
+  const { me, players, settings } = useData();
   const [profile, setProfile] = useState<PublicProfile>();
   const [error, setError] = useState<Issue>();
   const [editing, setEditing] = useState(false);
@@ -84,35 +85,64 @@ export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (i
   const owned = new Set(profile.cards);
   const cards = players.filter((p) => owned.has(p.id));
 
+  const card = profile.card;
+  const tier = card && getCardTier(profilePlayer(card), settings.tierConfig!);
+  const identity = (
+    <div className="flex min-w-0 items-center gap-3">
+      {profile.image
+        ? <img src={profile.image} alt="" className="size-12 shrink-0 rounded-xl object-cover sm:size-14" />
+        : <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-xl font-black text-dl-text sm:size-14">{profile.name.charAt(0).toUpperCase()}</span>}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h1 id="profile-title" className={`${pageTitle} truncate`}>{profile.name}</h1>
+        {card && <p className="truncate text-sm text-zinc-400">{card.name} · {card.hero}</p>}
+      </div>
+    </div>
+  );
+
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-6" aria-labelledby="profile-title">
-      <header className="noir-glass flex flex-wrap items-center justify-between gap-5 rounded-2xl p-4 sm:p-6">
-        <div className="flex min-w-0 items-center gap-3">
-          {profile.image
-            ? <img src={profile.image} alt="" className="size-12 shrink-0 rounded-xl object-cover sm:size-16" />
-            : <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-xl font-black text-dl-text sm:size-16">{profile.name.charAt(0).toUpperCase()}</span>}
-          <h1 id="profile-title" className={`${pageTitle} min-w-0 truncate`}>{profile.name}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {copy && <p role="status" className={`text-sm ${copy === "copied" ? "text-emerald-300" : "text-red-300"}`}>{t[copy]}</p>}
-          <button type="button" onClick={share} className={pill(false)}>{t.share}</button>
-          {owner && !editing && <button type="button" onClick={() => setEditing(true)} className={primaryBtn}>{profile.card ? t.edit : t.create}</button>}
-        </div>
-      </header>
-
       {editing ? (
-        <ProfileEditor
-          onCancel={() => setEditing(false)}
-          onSaved={(card) => { setProfile({ ...profile, card }); setEditing(false); }}
-        />
+        <>
+          {identity}
+          <ProfileEditor
+            onCancel={() => setEditing(false)}
+            onSaved={(saved) => { setProfile({ ...profile, card: saved }); setEditing(false); }}
+          />
+        </>
       ) : (
-        <div className="noir-glass flex flex-col items-center gap-4 rounded-2xl p-3 sm:p-6">
-          {profile.card ? (
-            <>
-              <div ref={cardRef} className="w-fit max-w-full"><Card player={profilePlayer(profile.card)} variant="editor" /></div>
-              <CardExportButton cardRef={cardRef} name={profile.card.name} />
-            </>
-          ) : <p className="text-sm text-zinc-400">{t.noCard}</p>}
+        <div className="noir-glass flex flex-col items-center gap-6 rounded-2xl p-4 sm:p-6 md:flex-row md:items-stretch md:gap-8">
+          {card && <div ref={cardRef} className="w-fit max-w-full shrink-0"><Card player={profilePlayer(card)} /></div>}
+          <div className="flex w-full min-w-0 flex-1 flex-col gap-6">
+            {identity}
+            {card && tier ? (
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-display text-5xl leading-none font-black text-dl-text tabular-nums">{calculateOVR(card.stats)}</span>
+                  <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">OVR</span>
+                  <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.name}</span>
+                </div>
+                <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                  {STAT_KEYS.map((k) => (
+                    <div key={k} className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold tracking-[0.18em] uppercase">
+                        <dt className="text-zinc-400">{k}</dt>
+                        <dd className="text-zinc-100 tabular-nums">{card.stats[k]}</dd>
+                      </div>
+                      <div aria-hidden="true" className="h-1.5 rounded-full bg-zinc-800">
+                        <div className="h-full rounded-full" style={{ width: `${card.stats[k]}%`, background: tier.c }} />
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : <p className="text-sm text-zinc-400">{t.noCard}</p>}
+            <div className="flex flex-wrap items-center gap-2 md:mt-auto">
+              {owner && <button type="button" onClick={() => setEditing(true)} className={primaryBtn}>{card ? t.edit : t.create}</button>}
+              <button type="button" onClick={share} className={pill(false)}>{t.share}</button>
+              {card && <CardExportButton cardRef={cardRef} name={card.name} />}
+              {copy && <p role="status" className={`text-sm ${copy === "copied" ? "text-emerald-300" : "text-red-300"}`}>{t[copy]}</p>}
+            </div>
+          </div>
         </div>
       )}
 
@@ -180,7 +210,7 @@ function ProfileEditor({ onSaved, onCancel }: { onSaved: (card: ProfileCard) => 
 
   return (
     <div className="noir-glass flex min-w-0 flex-col items-center gap-5 rounded-2xl p-3 sm:p-6 md:flex-row md:items-start">
-      <Card player={profilePlayer(card)} variant="editor" />
+      <Card player={profilePlayer(card)} />
       <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
         <form onSubmit={save} className="flex flex-col gap-4">
           <p className="text-sm text-zinc-400">{t.hint}</p>
