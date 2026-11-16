@@ -180,7 +180,8 @@ function ProfileCards({ ids, initialFavorites, owner, onOpenCard, onRedeem }: { 
   const [limit, setLimit] = useState(PAGE);
   const [favorites, setFavorites] = useState(initialFavorites);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [busy, setBusy] = useState<string>();
+  const [popped, setPopped] = useState<string>();
+  const pending = useRef(new Set<string>());
   const [favoriteFailed, setFavoriteFailed] = useState(false);
   const query = useDeferredValue(q.trim().toLowerCase());
   const favoriteIds = new Set(favorites);
@@ -197,16 +198,21 @@ function ProfileCards({ ids, initialFavorites, owner, onOpenCard, onRedeem }: { 
   const favoriteCount = summary.cards.filter((p) => favoriteIds.has(p.id)).length;
 
   const toggleFavorite = async (id: string) => {
-    setBusy(id);
+    if (pending.current.has(id)) return;
+    pending.current.add(id);
+    const was = favoriteIds.has(id);
+    const set = (on: boolean) => setFavorites((f) => on ? [id, ...f.filter((x) => x !== id)] : f.filter((x) => x !== id));
+    set(!was);
+    setPopped(was ? undefined : id);
     setFavoriteFailed(false);
     try {
-      const res = await fetch(favoritePath(id), { method: favoriteIds.has(id) ? "DELETE" : "PUT" });
+      const res = await fetch(favoritePath(id), { method: was ? "DELETE" : "PUT" });
       if (!res.ok) throw new Error(String(res.status));
-      setFavorites((await res.json() as { favorites: string[] }).favorites);
     } catch {
+      set(was);
       setFavoriteFailed(true);
     } finally {
-      setBusy(undefined);
+      pending.current.delete(id);
     }
   };
 
@@ -277,9 +283,9 @@ function ProfileCards({ ids, initialFavorites, owner, onOpenCard, onRedeem }: { 
                   <li key={player.id} className="relative">
                     <Card player={player} variant="medium" onOpen={() => onOpenCard(player.id)} />
                     {owner ? (
-                      <button type="button" aria-pressed={fav} disabled={busy === player.id} onClick={() => toggleFavorite(player.id)}
+                      <button type="button" aria-pressed={fav} onClick={() => toggleFavorite(player.id)} onAnimationEnd={(e) => e.animationName === "fav-ring" && setPopped(undefined)}
                         aria-label={fav ? t.removeFavorite(player.name) : t.addFavorite(player.name)} title={fav ? t.removeFavorite(player.name) : t.addFavorite(player.name)}
-                        className={`absolute top-2 right-2 z-20 flex size-11 cursor-pointer items-center justify-center rounded-full bg-dl-black/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 active:scale-95 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none sm:size-9 ${fav ? "text-amber-300" : "text-zinc-300 hover:text-white"}`}>
+                        className={`absolute top-2 right-2 z-20 flex size-11 cursor-pointer items-center justify-center rounded-full bg-dl-black/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 active:scale-95 motion-reduce:transition-none sm:size-9 ${fav ? "text-amber-300" : "text-zinc-300 hover:text-white"} ${popped === player.id ? "fav-pop" : ""}`}>
                         <Icon name="star" className={`size-5 ${fav ? "fill-current" : ""}`} />
                       </button>
                     ) : fav && (
