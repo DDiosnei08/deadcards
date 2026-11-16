@@ -1,178 +1,92 @@
-import { SELF, env } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { login } from "../helpers/fixtures";
-import { PROFILE_CARD_PATH, PROFILE_COLLECTION_PATH, PROFILE_LEADERBOARD_PATH, type ProfileCardState, type ProfileCollectionRedeem, type ProfileLeaderboard } from "../../src/lib/profile";
+import { PROFILE_CARD_PATH, PROFILE_COLLECTION_PATH, PROFILE_LEADERBOARD_PATH, type ProfileCard, type ProfileCardState, type ProfileCollectionRedeem, type ProfileLeaderboard } from "../../src/lib/profile";
 
-const accountId = "123456789";
-const match = (id: number, win: boolean) => ({
-  match_id: id, start_time: 1_700_000_000 + id, hero_id: 2, player_team: 1,
-  match_result: win ? 1 : 0, player_kills: 6, player_deaths: 4, player_assists: 8,
-});
+const stats = (v: number) => ({ MIR: v, MAC: v, SUP: v, MOV: v, POL: v, CON: v });
+const myCard: ProfileCard = { name: "Fan", hero: "Abrams", stats: stats(70) };
 
-function mockPublicStats() {
-  let matches = [match(100, true)];
-  let historyStatus = 200;
-  let rank: number | undefined = 7;
-  const fetchStats = vi.fn(async (input: string | URL | Request) => {
-    const url = new URL(String(input));
-    if (url.pathname.endsWith("/match-history")) return Response.json(matches, { status: historyStatus });
-    if (url.pathname.endsWith("/rank")) return rank === undefined
-      ? Response.json({}, { status: 503 })
-      : Response.json({ rank, subrank: 2 });
-    if (url.pathname.endsWith("/steam")) return Response.json([{ personaname: "Deadlock fan" }]);
-    throw new Error("Unexpected upstream request");
-  });
-  vi.stubGlobal("fetch", fetchStats);
-  return {
-    fetchStats,
-    setMatches: (value: typeof matches) => { matches = value; },
-    setHistoryStatus: (value: number) => { historyStatus = value; },
-    setRank: (value: number | undefined) => { rank = value; },
-  };
-}
-
-function card(method: string, cookie?: string, id?: string, published?: boolean) {
+function request(path: string, method: string, cookie?: string, body?: unknown) {
   const headers = new Headers();
   if (cookie) headers.set("cookie", cookie);
-  if (method === "PUT" || method === "PATCH") headers.set("content-type", "application/json");
-  const query = method === "GET" && id ? `?id=${encodeURIComponent(id)}` : "";
-  return SELF.fetch(`http://test${PROFILE_CARD_PATH}${query}`, {
-    method,
-    headers,
-    body: method === "PUT" || method === "PATCH" ? JSON.stringify({ accountId: id, published }) : undefined,
-  });
+  if (body !== undefined) headers.set("content-type", "application/json");
+  return SELF.fetch(`http://test${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
 }
 
-function collection(cookie?: string, id?: string) {
-  const headers = new Headers();
-  if (cookie) headers.set("cookie", cookie);
-  if (id) headers.set("content-type", "application/json");
-  return SELF.fetch(`http://test${PROFILE_COLLECTION_PATH}`, {
-    method: id ? "POST" : "GET",
-    headers,
-    body: id ? JSON.stringify({ accountId: id }) : undefined,
-  });
-}
-
-async function expireCard() {
-  await env.DB.batch([
-    env.DB.prepare("UPDATE profile_cards SET checked_at = 0"),
-    env.DB.prepare("DELETE FROM api_cache"),
-  ]);
-}
-
-afterEach(() => vi.unstubAllGlobals());
+const card = (method: string, cookie?: string, body?: unknown) => request(PROFILE_CARD_PATH, method, cookie, body);
+const collection = (method: string, cookie?: string) => request(PROFILE_COLLECTION_PATH, method, cookie);
+const leaderboard = () => SELF.fetch(`http://test${PROFILE_LEADERBOARD_PATH}`).then((r) => r.json<ProfileLeaderboard>());
 
 describe("Minha carta", () => {
-  it("valida IDs e monta a prévia pelo SteamID64 sem gravar um perfil", async () => {
+  it("exige login e valida a carta", async () => {
     const { cookie } = await login("fan");
-    const { fetchStats } = mockPublicStats();
-    expect((await card("PUT", undefined, accountId)).status).toBe(401);
-    expect((await card("GET", cookie, "123/other")).status).toBe(400);
-    expect(fetchStats).not.toHaveBeenCalled();
-    const response = await card("GET", cookie, String(76561197960265728n + BigInt(accountId)));
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      accountId, name: "Deadlock fan", matches: 1, wins: 1, kills: 6, rank: { tier: 7, subrank: 2 },
-    });
-    expect(await (await card("POST", cookie)).json()).toEqual({ accountId: null, published: false, history: [] });
+    expect((await card("GET")).status).toBe(401);
+    expect((await card("PUT", undefined, myCard)).status).toBe(401);
+    for (const bad of [
+      { ...myCard, name: " " },
+      { ...myCard, name: "x".repeat(25) },
+      { ...myCard, hero: "" },
+      { ...myCard, stats: { ...stats(70), MIR: 100 } },
+      { ...myCard, stats: { ...stats(70), CON: 0 } },
+      { ...myCard, stats: { ...stats(70), POL: 50.5 } },
+      { name: "Fan", hero: "Abrams", stats: { MIR: 70 } },
+      null,
+    ]) expect((await card("PUT", cookie, bad)).status).toBe(400);
+    expect(await (await card("GET", cookie)).json()).toEqual({ published: false, history: [] });
   });
 
-  it("guarda versões só quando a carta muda e isola o histórico por usuário", async () => {
+  it("guarda versões só quando a carta muda e isola por usuário", async () => {
     const { cookie } = await login("fan");
-    const { cookie: otherCookie } = await login("other");
-    const api = mockPublicStats();
-    const first = await (await card("PUT", cookie, accountId)).json<ProfileCardState>();
+    const { cookie: other } = await login("other");
+    const first = await (await card("PUT", cookie, { ...myCard, name: "  Fan  ", extra: 1 })).json<ProfileCardState>();
     expect(first.history).toHaveLength(1);
-    expect(first.history[0].automatic).toBe(false);
-    expect(await (await card("POST", otherCookie)).json()).toEqual({ accountId: null, published: false, history: [] });
-    expect(await (await card("POST", cookie)).json()).toEqual(first);
+    expect(first.history[0].card).toEqual(myCard);
+    expect(await (await card("PUT", cookie, myCard)).json()).toEqual(first);
+    expect(await (await card("GET", other)).json()).toEqual({ published: false, history: [] });
 
-    await expireCard();
-    api.setRank(undefined);
-    expect(await (await card("POST", cookie)).json()).toEqual(first);
-
-    await expireCard();
-    api.setRank(7);
-    api.setMatches([match(101, false), match(100, true), match(101, false)]);
-    const refreshed = await (await card("POST", cookie)).json<ProfileCardState>();
-    expect(refreshed.history).toHaveLength(2);
-    expect(refreshed.history[0]).toMatchObject({ automatic: true, stats: { matches: 2, wins: 1, lastMatchId: 101 } });
-    expect(refreshed.history[0].updatedAt).toBeGreaterThanOrEqual(first.history[0].updatedAt);
-    expect(refreshed.history[1]).toEqual(first.history[0]);
-
-    await expireCard();
-    api.setMatches([match(100, true)]);
-    expect(await (await card("POST", cookie)).json()).toEqual(refreshed);
-
-    await expireCard();
-    api.setHistoryStatus(503);
-    expect(await (await card("POST", cookie)).json()).toEqual({ ...refreshed, issue: "unavailable" });
-
-    await expireCard();
-    api.setHistoryStatus(200);
-    api.setMatches([match(101, false), match(100, true)]);
-    api.setRank(0);
-    const reset = await (await card("POST", cookie)).json<ProfileCardState>();
-    expect(reset.history).toHaveLength(3);
-    expect(reset.history[0]).toMatchObject({ automatic: true, stats: { rank: null } });
+    const next = await (await card("PUT", cookie, { ...myCard, stats: stats(99) })).json<ProfileCardState>();
+    expect(next.history).toHaveLength(2);
+    expect(next.history[0].card.stats.MIR).toBe(99);
+    expect(next.history[1]).toEqual(first.history[0]);
   });
 
-  it("publica por escolha, ordena por patente e remove a carta ao sair do ranking", async () => {
+  it("publica por escolha e ordena o ranking por OVR", async () => {
     const { cookie } = await login("fan");
-    const { cookie: otherCookie } = await login("other");
-    const { cookie: duplicateCookie } = await login("duplicate");
-    const api = mockPublicStats();
-    const secondId = "987654321";
-    const leaderboard = () => SELF.fetch(`http://test${PROFILE_LEADERBOARD_PATH}`).then((r) => r.json<ProfileLeaderboard>());
+    const { cookie: other } = await login("other");
+    expect((await card("PATCH", cookie, { published: true })).status).toBe(409);
 
-    await card("PUT", cookie, accountId);
+    await card("PUT", cookie, myCard);
+    await card("PUT", other, { ...myCard, name: "Other", stats: stats(90) });
     expect((await leaderboard()).cards).toEqual([]);
-    expect((await card("PATCH", undefined, accountId, true)).status).toBe(401);
-    expect((await card("PATCH", otherCookie, accountId, true)).status).toBe(409);
-    expect(await (await card("PATCH", cookie, accountId, true)).json()).toMatchObject({ published: true });
+    expect((await card("PATCH", cookie, { published: "yes" })).status).toBe(400);
+    expect(await (await card("PATCH", cookie, { published: true })).json()).toMatchObject({ published: true });
+    await card("PATCH", other, { published: true });
+    expect((await leaderboard()).cards.map((c) => c.name)).toEqual(["Other", "Fan"]);
 
-    api.setRank(10);
-    api.setMatches([match(101, false), match(100, true)]);
-    await card("PUT", otherCookie, secondId);
-    await card("PATCH", otherCookie, secondId, true);
-    await card("PUT", duplicateCookie, secondId);
-    await card("PATCH", duplicateCookie, secondId, true);
-    const { cards } = await leaderboard();
-    expect(cards.map(({ rank }) => rank?.tier)).toEqual([10, 7]);
-    expect(cards[0]).toMatchObject({ matches: 2, wins: 1 });
-    expect(cards[0]).not.toHaveProperty("accountId");
-    expect(cards[0]).not.toHaveProperty("lastMatchId");
+    await card("PUT", cookie, { ...myCard, stats: stats(95) });
+    expect((await leaderboard()).cards.map((c) => c.name)).toEqual(["Fan", "Other"]);
 
-    expect(await (await card("PATCH", duplicateCookie, secondId, false)).json()).toMatchObject({ published: false });
-    expect(await (await card("PATCH", otherCookie, secondId, false)).json()).toMatchObject({ published: false });
-    expect((await leaderboard()).cards).toHaveLength(1);
-    expect(await (await card("PUT", cookie, secondId)).json()).toMatchObject({ published: false });
-    expect((await leaderboard()).cards).toEqual([]);
+    await card("PATCH", other, { published: false });
+    expect((await leaderboard()).cards).toEqual([{ ...myCard, stats: stats(95) }]);
   });
 
-  it("resgata uma versão privada e estável por jogador, mesmo em pedidos concorrentes", async () => {
+  it("resgata cada versão uma vez, mesmo em pedidos concorrentes", async () => {
     const { cookie } = await login("fan");
-    const { cookie: otherCookie } = await login("other");
-    const api = mockPublicStats();
-    expect((await collection()).status).toBe(401);
-    expect((await collection(undefined, accountId)).status).toBe(401);
-    expect((await collection(cookie, "123/other")).status).toBe(400);
+    const { cookie: other } = await login("other");
+    expect((await collection("GET")).status).toBe(401);
+    expect((await collection("POST", cookie)).status).toBe(409);
 
-    const claims = await Promise.all([collection(cookie, accountId), collection(cookie, accountId)])
+    await card("PUT", cookie, myCard);
+    const claims = await Promise.all([collection("POST", cookie), collection("POST", cookie)])
       .then((responses) => Promise.all(responses.map((r) => r.json<ProfileCollectionRedeem>())));
-    expect(claims.filter((claim) => claim.added)).toHaveLength(1);
+    expect(claims.filter((c) => c.added)).toHaveLength(1);
     expect(claims[0].card).toEqual(claims[1].card);
-    expect(await (await collection(cookie)).json()).toEqual([claims[0].card]);
-    expect(await (await collection(otherCookie)).json()).toEqual([]);
-    expect(await (await card("POST", cookie)).json()).toMatchObject({ accountId: null });
+    expect(claims[0].card.card).toEqual(myCard);
 
-    await expireCard();
-    api.setMatches([match(100, false)]);
-    const duplicate = await (await collection(cookie, accountId)).json<ProfileCollectionRedeem>();
-    expect(duplicate).toEqual({ card: claims[0].card, added: false });
-    expect(await (await collection(otherCookie, accountId)).json()).toMatchObject({
-      added: true, card: { stats: { wins: 0 } },
-    });
+    await card("PUT", cookie, { ...myCard, stats: stats(80) });
+    expect(await (await collection("POST", cookie)).json()).toMatchObject({ added: true, card: { card: { stats: stats(80) } } });
+    const owned = await (await collection("GET", cookie)).json<ProfileCollectionRedeem["card"][]>();
+    expect(owned.map((c) => c.card.stats.MIR).sort()).toEqual([70, 80]);
+    expect(await (await collection("GET", other)).json()).toEqual([]);
   });
 });

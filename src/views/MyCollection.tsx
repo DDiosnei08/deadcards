@@ -1,29 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, type ProfileFace } from "../components/Card";
+import { Card } from "../components/Card";
 import { CardExportButton } from "../components/CardExportButton";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
-import { PROFILE_COLLECTION_PATH, type CollectedProfileCard } from "../lib/profile";
-import { useProfileCardDisplay } from "../lib/profileDisplay";
+import { PROFILE_COLLECTION_PATH, profilePlayer, type CollectedProfileCard, type ProfileCard } from "../lib/profile";
 import { pageTitle, pill, primaryBtn } from "../lib/ui";
 
 const S = strings({
   pt: {
     title: "Minha coleção", profile: "Meu perfil", redeem: "Resgatar com código",
-    generated: "Cartas geradas", official: "Cartas do catálogo", redeemed: "Resgatada em",
-    empty: "Resgate uma carta na prévia do perfil ou use um código do catálogo.",
+    generated: "Minhas cartas", official: "Cartas do catálogo", redeemed: "Resgatada em",
+    empty: "Resgate a carta do seu perfil ou use um código do catálogo.",
     loading: "Carregando sua coleção…", error: "Não foi possível carregar sua coleção.", retry: "Tentar novamente",
   },
   en: {
     title: "My collection", profile: "My profile", redeem: "Redeem a code",
-    generated: "Generated cards", official: "Catalog cards", redeemed: "Redeemed on",
-    empty: "Redeem a card from the profile preview or use a catalog code.",
+    generated: "My cards", official: "Catalog cards", redeemed: "Redeemed on",
+    empty: "Redeem your profile card or use a catalog code.",
     loading: "Loading your collection…", error: "Could not load your collection.", retry: "Try again",
   },
   es: {
     title: "Mi colección", profile: "Mi perfil", redeem: "Canjear con código",
-    generated: "Cartas generadas", official: "Cartas del catálogo", redeemed: "Canjeada el",
-    empty: "Canjea una carta en la vista previa del perfil o usa un código del catálogo.",
+    generated: "Mis cartas", official: "Cartas del catálogo", redeemed: "Canjeada el",
+    empty: "Canjea la carta de tu perfil o usa un código del catálogo.",
     loading: "Cargando tu colección…", error: "No se pudo cargar tu colección.", retry: "Reintentar",
   },
 });
@@ -42,7 +41,6 @@ export function MyCollection({ onOpenProfile, onRedeemCode, onOpenCard }: {
   const t = useT(S);
   const locale = useLocale();
   const { players } = useData();
-  const { faceFor } = useProfileCardDisplay();
   const [collection, setCollection] = useState<{ generated: CollectedProfileCard[]; officialIds: string[] }>();
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -88,8 +86,8 @@ export function MyCollection({ onOpenProfile, onRedeemCode, onOpenCard }: {
         <section aria-labelledby="generated-collection-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
           <h2 id="generated-collection-title" className="font-display text-lg font-black text-dl-text">{t.generated}</h2>
           <ul className="flex flex-wrap justify-center gap-6 sm:justify-start">
-            {generated.map(({ stats, redeemedAt }) => (
-              <CollectedCard key={stats.accountId} face={faceFor(stats)} redeemedAt={redeemedAt} date={date} />
+            {generated.map(({ id, card, redeemedAt }) => (
+              <CollectedCard key={id} card={card} redeemedAt={redeemedAt} date={date} />
             ))}
           </ul>
         </section>
@@ -108,8 +106,8 @@ export function MyCollection({ onOpenProfile, onRedeemCode, onOpenCard }: {
   );
 }
 
-function CollectedCard({ face, redeemedAt, date }: {
-  face: ProfileFace;
+function CollectedCard({ card, redeemedAt, date }: {
+  card: ProfileCard;
   redeemedAt: number;
   date: Intl.DateTimeFormat;
 }) {
@@ -117,11 +115,11 @@ function CollectedCard({ face, redeemedAt, date }: {
   const cardRef = useRef<HTMLDivElement>(null);
   return (
     <li className="flex max-w-full flex-col items-center gap-2.5">
-      <div ref={cardRef} className="w-fit max-w-full"><Card profile={face} /></div>
+      <div ref={cardRef} className="w-fit max-w-full"><Card player={profilePlayer(card)} /></div>
       <p className="text-xs text-zinc-400">
         {t.redeemed} <time dateTime={new Date(redeemedAt).toISOString()}>{date.format(redeemedAt)}</time>
       </p>
-      <CardExportButton cardRef={cardRef} name={face.name} />
+      <CardExportButton cardRef={cardRef} name={card.name} />
     </li>
   );
 }

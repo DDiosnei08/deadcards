@@ -201,11 +201,6 @@ export function getRarity(ovr: number, cfg: TierBand[]): Tier {
   return RARITY_TIERS.find((t) => ovr >= rarityMin(t, cfg)) ?? RARITY_TIERS[RARITY_TIERS.length - 1];
 }
 
-export function getProfileCardTier(rankTier = 0): Tier {
-  const minimumRank = [11, 10, 8, 6, 3, 0];
-  return RARITY_TIERS[minimumRank.findIndex((min) => rankTier >= min)];
-}
-
 export function getCardTier(p: Player, cfg: TierBand[]): Tier {
   const base = getRarity(getPlayerOvr(p), cfg);
   const f = p.special ? p.frame : undefined;

@@ -3,26 +3,26 @@ import { Card } from "./Card";
 import { Icon } from "./Icon";
 import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
-import { PROFILE_LEADERBOARD_PATH, type ProfileLeaderboard } from "../lib/profile";
-import { useProfileCardDisplay } from "../lib/profileDisplay";
-import { getProfileCardTier } from "../lib/rarity";
+import { getPlayerOvr } from "../lib/cards";
+import { PROFILE_LEADERBOARD_PATH, profilePlayer, type ProfileLeaderboard } from "../lib/profile";
+import { getCardTier } from "../lib/rarity";
 import { pill } from "../lib/ui";
 
 const S = strings({
   pt: {
-    title: "Ranking dos participantes", order: "Por patente e taxa de vitórias.",
+    title: "Ranking dos participantes", order: "Por OVR, definido por cada participante.",
     empty: "As cartas publicadas pelos participantes aparecem aqui.",
     loading: "Carregando ranking…", error: "Não foi possível carregar o ranking.",
     retry: "Tentar novamente", more: "Ver mais cartas", profile: "Abrir meu perfil", login: "Entrar para participar",
   },
   en: {
-    title: "Community leaderboard", order: "By rank and recent win rate.",
+    title: "Community leaderboard", order: "By OVR, set by each participant.",
     empty: "Cards shared by participants will appear here.",
     loading: "Loading leaderboard…", error: "Could not load the leaderboard.",
     retry: "Try again", more: "See more cards", profile: "Open my profile", login: "Sign in to join",
   },
   es: {
-    title: "Clasificación de participantes", order: "Por rango y porcentaje de victorias.",
+    title: "Clasificación de participantes", order: "Por OVR, definido por cada participante.",
     empty: "Aquí aparecen las cartas que publican los participantes.",
     loading: "Cargando clasificación…", error: "No se pudo cargar la clasificación.",
     retry: "Reintentar", more: "Ver más cartas", profile: "Abrir mi perfil", login: "Inicia sesión para participar",
@@ -37,8 +37,7 @@ async function loadPage(page: number, signal?: AbortSignal): Promise<ProfileLead
 
 export function ParticipantsRanking({ onOpenProfile }: { onOpenProfile?: () => void }) {
   const t = useT(S);
-  const { heroIcon } = useData();
-  const { faceFor, percent } = useProfileCardDisplay();
+  const { heroIcon, settings } = useData();
   const [board, setBoard] = useState<ProfileLeaderboard>();
   const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -78,10 +77,10 @@ export function ParticipantsRanking({ onOpenProfile }: { onOpenProfile?: () => v
       {board?.cards.length === 0 && <p className="noir-glass rounded-xl p-4 text-sm text-zinc-400">{t.empty}</p>}
       {!!board?.cards.length && (
         <ol className="flex flex-col gap-2">
-          {board.cards.map((stats, index) => {
-            const face = faceFor(stats);
-            const tier = getProfileCardTier(face.rankTier);
-            const icon = heroIcon(face.hero);
+          {board.cards.map((card, index) => {
+            const player = profilePlayer(card);
+            const tier = getCardTier(player, settings.tierConfig!);
+            const icon = heroIcon(card.hero);
             const open = openIndex === index;
             return (
               <li key={index} className="min-w-0">
@@ -90,14 +89,14 @@ export function ParticipantsRanking({ onOpenProfile }: { onOpenProfile?: () => v
                   <span className="w-8 shrink-0 text-center text-sm font-black text-zinc-300 tabular-nums">#{index + 1}</span>
                   {icon && <img src={icon} alt="" loading="lazy" className="size-8 shrink-0 rounded-md object-cover sm:size-10" />}
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate font-display text-sm font-black text-dl-text uppercase">{face.name}</span>
-                    <span className="truncate text-xs text-zinc-300">{face.hero} · {face.rank}</span>
+                    <span className="truncate font-display text-sm font-black text-dl-text uppercase">{card.name}</span>
+                    <span className="truncate text-xs text-zinc-300">{card.hero}</span>
                   </span>
-                  <span className="text-xs font-bold text-zinc-100 tabular-nums">{percent.format(stats.wins / stats.matches)}</span>
+                  <span className="text-xs font-bold text-zinc-100 tabular-nums">{getPlayerOvr(player)}</span>
                   <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }} title={tier.name}>{tier.tierKey}</span>
                   <Icon name={open ? "chevron-up" : "chevron-down"} className="size-3.5" />
                 </button>
-                {open && <div className="flex justify-center py-3"><Card profile={face} /></div>}
+                {open && <div className="flex justify-center py-3"><Card player={player} /></div>}
               </li>
             );
           })}

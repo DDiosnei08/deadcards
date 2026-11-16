@@ -1,48 +1,37 @@
+import { STAT_KEYS } from "./cards";
+import type { Player, Stats } from "./types";
+
 export const PROFILE_CARD_PATH = "/api/profile/card";
 export const PROFILE_COLLECTION_PATH = "/api/profile/collection";
 export const PROFILE_LEADERBOARD_PATH = "/api/profile/leaderboard";
-export const PROFILE_REFRESH_MS = 15 * 60 * 1000;
+export const PROFILE_NAME_MAX = 24;
 
-export type ProfileCardStats = {
-  accountId: string;
-  name: string | null;
-  heroId: number;
-  rank?: { tier: number; subrank: number } | null;
-  matches: number;
-  wins: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  lastMatchId: number;
-  lastMatchAt: number;
-};
+export type ProfileCard = { name: string; hero: string; stats: Stats };
 
-export type ProfileCardVersion = {
-  id: number;
-  stats: ProfileCardStats;
-  updatedAt: number;
-  automatic: boolean;
-};
+export type ProfileCardVersion = { id: number; card: ProfileCard; updatedAt: number };
 
-export type ProfileCardState = {
-  accountId: string | null;
-  published: boolean;
-  history: ProfileCardVersion[];
-  issue?: "no_data" | "unavailable";
-};
+export type ProfileCardState = { published: boolean; history: ProfileCardVersion[] };
 
-export type LeaderboardCard = Omit<ProfileCardStats, "accountId" | "lastMatchId" | "lastMatchAt">;
-export type ProfileLeaderboard = { cards: LeaderboardCard[]; nextPage: number | null };
-export type CollectedProfileCard = { stats: ProfileCardStats; redeemedAt: number };
+export type ProfileLeaderboard = { cards: ProfileCard[]; nextPage: number | null };
+export type CollectedProfileCard = { id: number; card: ProfileCard; redeemedAt: number };
 export type ProfileCollectionRedeem = { card: CollectedProfileCard; added: boolean };
 
-// Public individual SteamID64s embed the unsigned 32-bit account number.
-export function normalizeAccountId(input: unknown): string | null {
-  if (typeof input !== "string") return null;
-  const value = input.trim();
-  const digits = /^\[U:1:(\d{1,10})\]$/.exec(value)?.[1] ?? value;
-  if (!/^(?:\d{1,10}|\d{17})$/.test(digits)) return null;
-  const number = BigInt(digits);
-  const id = digits.length === 17 ? number - 76561197960265728n : number;
-  return id > 0n && id <= 4294967295n ? String(id) : null;
+export function parseProfileCard(input: unknown): ProfileCard | null {
+  if (!input || typeof input !== "object") return null;
+  const { name, hero, stats } = input as Partial<Record<keyof ProfileCard, unknown>>;
+  if (typeof name !== "string" || typeof hero !== "string" || !stats || typeof stats !== "object") return null;
+  const cleanName = name.trim();
+  const cleanHero = hero.trim();
+  if (!cleanName || cleanName.length > PROFILE_NAME_MAX || !cleanHero || cleanHero.length > 40) return null;
+  const values = stats as Record<string, unknown>;
+  if (!STAT_KEYS.every((k) => Number.isInteger(values[k]) && (values[k] as number) >= 1 && (values[k] as number) <= 99)) return null;
+  return {
+    name: cleanName,
+    hero: cleanHero,
+    stats: Object.fromEntries(STAT_KEYS.map((k) => [k, values[k]])) as Stats,
+  };
+}
+
+export function profilePlayer(card: ProfileCard): Player {
+  return { id: "profile", teamId: "", position: "Flex", c1: "#27272a", c2: "#18181b", history: [], ...card };
 }

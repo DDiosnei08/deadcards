@@ -3,15 +3,12 @@ import type { CSSProperties, PointerEvent } from "react";
 import type { Player } from "../lib/types";
 import { getPlayerOvr, getPlayerTrend, hexToRgba, teamOf, useLabel } from "../lib/cards";
 import { strings, useT } from "../lib/i18n";
-import { getCardTier, getProfileCardTier, ornamentSVG, particleSpecs, rarityStyleVars, ringSVG } from "../lib/rarity";
+import { getCardTier, ornamentSVG, particleSpecs, rarityStyleVars, ringSVG } from "../lib/rarity";
 import { useData } from "../lib/data";
 import { TeamLogo3D } from "./TeamLogo3D";
 import { TrendBadge } from "./TrendBadge";
 
 type Variant = "team" | "medium" | "editor";
-export type ProfileFace = { name: string; hero: string; rank: string; rankTier?: number; stats: { label: string; value: string }[] };
-type CardProps = { variant?: Variant; onOpen?: () => void } &
-  ({ player: Player; profile?: never } | { profile: ProfileFace; player?: never });
 
 const S = strings({
   pt: { view: "Visualizar Carta", viewOf: (name: string) => `Visualizar carta de ${name}` },
@@ -21,18 +18,16 @@ const S = strings({
 
 const STAT_ORDER = ["MIR", "MOV", "MAC", "POL", "SUP", "CON"] as const;
 
-export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
+export function Card({ player, variant = "team", onOpen }: { player: Player; variant?: Variant; onOpen?: () => void }) {
   const { teams, settings, heroArt } = useData();
   const t = useT(S);
   const label = useLabel();
-  const team = player ? teamOf(teams, player) : null;
-  const ovr = player ? getPlayerOvr(player) : null;
-  const rk = player ? getCardTier(player, settings.tierConfig!) : getProfileCardTier(profile.rankTier);
-  const { name, hero } = player ?? profile;
+  const team = teamOf(teams, player);
+  const ovr = getPlayerOvr(player);
+  const rk = getCardTier(player, settings.tierConfig!);
   const medium = variant === "medium";
   const editor = variant === "editor";
-  const art = player?.art?.url ? { url: player.art.url, zoom: player.art.zoom ?? 100, x: player.art.x ?? 50, y: player.art.y ?? 50 } : heroArt(hero);
-  const stats = player ? STAT_ORDER.map((key) => ({ label: key, value: String(player.stats[key] ?? "") })) : profile.stats;
+  const art = player.art?.url ? { url: player.art.url, zoom: player.art.zoom ?? 100, x: player.art.x ?? 50, y: player.art.y ?? 50 } : heroArt(player.hero);
 
   const rx = useMotionValue(0);
   const ry = useMotionValue(0);
@@ -47,12 +42,12 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
 
   const sizeClass = editor ? "card-size-editor" : medium ? "card-size-team-medium" : "card-size-team";
   const topPad = rk.custom ? rk.topPad || undefined : rk.lvl >= 3 ? 26 : undefined;
-  const footerSize = Number.isFinite(Number(player?.footerSize)) ? Number(player?.footerSize) : 12;
-  const footerColor = /^#[0-9a-f]{6}$/i.test(String(player?.footerColor)) ? player?.footerColor : "#f4f4f5";
+  const footerSize = Number.isFinite(Number(player.footerSize)) ? Number(player.footerSize) : 12;
+  const footerColor = /^#[0-9a-f]{6}$/i.test(String(player.footerColor)) ? player.footerColor : "#f4f4f5";
 
   return (
     <motion.div
-      className={`rk-wrap${player?.special ? " sp-card" : ""}`}
+      className={`rk-wrap${player.special ? " sp-card" : ""}`}
       data-rarity={rk.key}
       style={{ ...(rarityStyleVars(rk) as CSSProperties), rotateX, rotateY, transformPerspective: 900 }}
       onPointerMove={onMove}
@@ -64,7 +59,7 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
             <div className="hero-bg-wrap pointer-events-none absolute inset-0 overflow-hidden">
               <img
                 src={art.url}
-                alt={hero}
+                alt={player.hero}
                 draggable={false}
                 style={{
                   position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover",
@@ -79,7 +74,7 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
 
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ background: `linear-gradient(180deg, ${hexToRgba(player?.c2 ?? "#18181b", 0)} 52%, ${hexToRgba(player?.c2 ?? "#18181b", 0.5)} 80%, rgba(9, 9, 11, 0.78) 100%)` }}
+            style={{ background: `linear-gradient(180deg, ${hexToRgba(player.c2, 0)} 52%, ${hexToRgba(player.c2, 0.5)} 80%, rgba(9, 9, 11, 0.78) 100%)` }}
           />
           {rk.custom ? (
             <svg className="fr-orn" aria-hidden="true" viewBox="0 0 295 430" preserveAspectRatio="none" dangerouslySetInnerHTML={{ __html: ornamentSVG(rk) }} />
@@ -88,18 +83,10 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
           )}
           {(rk.custom ? rk.glint : rk.lvl >= 3) && <div className="rk-glint" />}
           <Particles tierKey={rk} />
-          {player?.special && !rk.noSweep && <div className="sp-card-fx" />}
+          {player.special && !rk.noSweep && <div className="sp-card-fx" />}
 
           <div className="relative z-10 flex items-start justify-between gap-2">
-            {profile ? (
-              <div className="card-txt-shadow flex flex-col items-start gap-1.5">
-                <span className="text-2xl font-black text-white">{profile.rank}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="rounded-sm border border-white/25 bg-black/65 px-2 py-0.5 text-xs font-bold text-zinc-100">{hero}</span>
-                  <span className="rk-chip" style={{ color: rk.c, borderColor: rk.c }} title={rk.name}>{rk.tierKey}</span>
-                </div>
-              </div>
-            ) : player && team && <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">
                 <span data-ovr className={`${editor ? "text-6xl" : medium ? "text-4xl" : "text-5xl"} leading-none font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]`}>{ovr}</span>
                 <TrendBadge delta={getPlayerTrend(player)} size={editor ? "editor" : "card"} />
@@ -112,21 +99,21 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
               ) : (
                 <span className="mt-1.5 rounded-sm border border-white/35 bg-white/20 px-2 py-0.5 text-[10px] font-black tracking-widest text-white uppercase">{team.tag || "FA"}</span>
               )}
-            </div>}
+            </div>
           </div>
 
           <div className={`relative z-10 mt-auto ${medium ? "pb-5" : editor ? "pb-9" : "pb-8"}`}>
             <div className={`mb-2 border-b border-zinc-200/45 pb-1.5 text-center ${medium ? "" : "mx-2"}`}>
               <h3 className={`${editor ? "text-2xl" : medium ? "text-lg" : "text-xl"} truncate font-black tracking-[0.12em] text-white uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`}>
-                {name}
+                {player.name}
               </h3>
             </div>
             {!medium && (
               <div className={`grid grid-cols-2 gap-x-5 ${editor ? "px-5" : "px-4"} card-txt-shadow gap-y-1.5 py-1`}>
-                {stats.map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between gap-1 leading-none">
-                    <span className={`${editor && player ? "text-base" : "text-sm"} font-extrabold tracking-wider text-zinc-200`}>{label}</span>
-                    <span className={`${editor && player ? "text-xl" : "text-lg"} font-black text-white`}>{value}</span>
+                {STAT_ORDER.map((k) => (
+                  <div key={k} className="flex items-center justify-between leading-none">
+                    <span className={`${editor ? "text-base" : "text-sm"} font-extrabold tracking-wider text-zinc-200`}>{k}</span>
+                    <span className={`${editor ? "text-xl" : "text-lg"} font-black text-white`}>{player.stats[k]}</span>
                   </div>
                 ))}
               </div>
@@ -135,12 +122,12 @@ export function Card({ player, profile, variant = "team", onOpen }: CardProps) {
               className={`text-center ${medium ? "mt-2" : "mt-3"} leading-tight font-black uppercase`}
               style={{ fontSize: medium ? Math.round(footerSize * 0.85) : footerSize, letterSpacing: "0.2em", color: footerColor, textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
             >
-              {player?.footer ?? "Deadlock Cards"}
+              {player.footer ?? "Deadlock Cards"}
             </div>
           </div>
 
           {onOpen && (
-            <button type="button" className="card-hover-overlay border-0" onClick={onOpen} aria-label={t.viewOf(name)}>
+            <button type="button" className="card-hover-overlay border-0" onClick={onOpen} aria-label={t.viewOf(player.name)}>
               <span className={`card-hover-cta w-full ${medium ? "max-w-[170px]" : "max-w-[215px]"} rounded-xl bg-zinc-100 px-4 py-2.5 text-xs font-extrabold tracking-wider text-zinc-950 uppercase shadow-[0_0_24px_rgba(255,255,255,0.4)]`}>
                 {t.view}
               </span>
