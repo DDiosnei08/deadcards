@@ -11,7 +11,7 @@ export function createAuth(env: Env, request: Request) {
     disabledPaths: ["/update-user", "/change-email", "/link-social"],
     socialProviders: {
       twitch: { clientId: env.TWITCH_CLIENT_ID, clientSecret: env.TWITCH_CLIENT_SECRET },
-      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET, scope: ["https://www.googleapis.com/auth/youtube.readonly"] },
+      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
     },
     databaseHooks: {
       account: {
