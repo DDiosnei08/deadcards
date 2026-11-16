@@ -16,7 +16,7 @@ const S = strings({
     save: "Salvar carta", saving: "Salvando…", cancel: "Cancelar", unsaved: "Alterações não salvas.",
     loading: "Carregando perfil…", history: "Histórico de versões",
     edit: "Editar minha carta", create: "Montar minha carta", share: "Copiar link", copied: "Link copiado.", copyFailed: "Não foi possível copiar o link.",
-    noCard: "Ainda não montou uma carta.", cards: "Cartas resgatadas", noCards: "Nenhuma carta resgatada ainda.",
+    noCard: "Ainda não montou uma carta.", cards: "Cartas resgatadas", noCards: "Nenhuma carta resgatada ainda.", redeem: "Resgatar carta",
     not_found: "Perfil não encontrado.",
     invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível carregar agora.", login: "Entre para editar sua carta.",
   },
@@ -26,7 +26,7 @@ const S = strings({
     save: "Save card", saving: "Saving…", cancel: "Cancel", unsaved: "Unsaved changes.",
     loading: "Loading profile…", history: "Version history",
     edit: "Edit my card", create: "Build my card", share: "Copy link", copied: "Link copied.", copyFailed: "Could not copy the link.",
-    noCard: "No card built yet.", cards: "Redeemed cards", noCards: "No cards redeemed yet.",
+    noCard: "No card built yet.", cards: "Redeemed cards", noCards: "No cards redeemed yet.", redeem: "Redeem a card",
     not_found: "Profile not found.",
     invalid_card: "Check the name, hero and attributes.", unavailable: "Could not load right now.", login: "Sign in to edit your card.",
   },
@@ -36,7 +36,7 @@ const S = strings({
     save: "Guardar carta", saving: "Guardando…", cancel: "Cancelar", unsaved: "Cambios sin guardar.",
     loading: "Cargando perfil…", history: "Historial de versiones",
     edit: "Editar mi carta", create: "Armar mi carta", share: "Copiar enlace", copied: "Enlace copiado.", copyFailed: "No se pudo copiar el enlace.",
-    noCard: "Todavía no armó una carta.", cards: "Cartas canjeadas", noCards: "Todavía no canjeó cartas.",
+    noCard: "Todavía no armó una carta.", cards: "Cartas canjeadas", noCards: "Todavía no canjeó cartas.", redeem: "Canjear carta",
     not_found: "Perfil no encontrado.",
     invalid_card: "Revisa el nombre, el héroe y los atributos.", unavailable: "No se pudo cargar ahora.", login: "Inicia sesión para editar tu carta.",
   },
@@ -56,7 +56,7 @@ function issueOf(error: unknown): Issue {
   return code === "invalid_card" || code === "login" || code === "not_found" ? code : "unavailable";
 }
 
-export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (id: string) => void }) {
+export function Profile({ userId, onOpenCard, onRedeem }: { userId: string; onOpenCard: (id: string) => void; onRedeem: () => void }) {
   const t = useT(S);
   const { me, players, settings } = useData();
   const [profile, setProfile] = useState<PublicProfile>();
@@ -151,7 +151,10 @@ export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (i
       )}
 
       <section aria-labelledby="profile-cards-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
-        <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {cards.length}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {cards.length}</h2>
+          {owner && <button type="button" onClick={onRedeem} className={pill(false)}>{t.redeem}</button>}
+        </div>
         {cards.length ? (
           <ul className="flex flex-wrap justify-center gap-6 sm:justify-start">
             {cards.map((player) => <li key={player.id}><Card player={player} variant="medium" onOpen={() => onOpenCard(player.id)} /></li>)}

@@ -310,7 +310,7 @@ function Shell() {
             {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "compare" && <Compare onOpenCard={setSpotlight} />}
-            {tab === "profile" && profileId && <Profile key={profileId} userId={profileId} onOpenCard={setSpotlight} />}
+            {tab === "profile" && profileId && <Profile key={profileId} userId={profileId} onOpenCard={setSpotlight} onRedeem={() => setTab("redeem")} />}
             {tab === "settings" && me && <Settings />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
