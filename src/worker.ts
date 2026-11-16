@@ -122,7 +122,7 @@ async function upload(env: Env, request: Request, folder: string): Promise<Respo
 async function write(env: Env, request: Request, kind: string, id: string): Promise<Response> {
   const del = request.method === "DELETE";
   if (!del && request.method !== "PUT") return bad("método não suportado", 405);
-  const b = del ? {} : ((await request.json().catch(() => null)) as Record<string, any> | null) ?? {};
+  const b = del ? {} : ((await request.json().catch(() => null)) as Record<string, unknown> | null) ?? {};
   const db = env.DB;
   if (del && (kind === "players" || kind === "teams")) {
     const col = kind === "players" ? "id" : "team_id";
@@ -137,7 +137,7 @@ async function write(env: Env, request: Request, kind: string, id: string): Prom
       await db.prepare(
         "INSERT INTO players (id, team_id, name, position, hero, stats_json, ovr, c1, c2, history_json, extra_json) VALUES (?,?,?,?,?,?,?,?,?,?,?) " +
         "ON CONFLICT(id) DO UPDATE SET team_id=excluded.team_id, name=excluded.name, position=excluded.position, hero=excluded.hero, stats_json=excluded.stats_json, ovr=excluded.ovr, c1=excluded.c1, c2=excluded.c2, history_json=excluded.history_json, extra_json=excluded.extra_json",
-      ).bind(id, b.teamId, b.name, b.position ?? "Flex", b.hero ?? "Abrams", JSON.stringify(b.stats), Number.isFinite(b.ovr) ? Math.round(b.ovr) : null,
+      ).bind(id, b.teamId, b.name, b.position ?? "Flex", b.hero ?? "Abrams", JSON.stringify(b.stats), typeof b.ovr === "number" && Number.isFinite(b.ovr) ? Math.round(b.ovr) : null,
         b.c1 ?? "#0e7490", b.c2 ?? "#082f49", JSON.stringify(b.history ?? []), JSON.stringify(extra)).run();
     }
   } else if (kind === "teams") {
@@ -160,7 +160,7 @@ async function write(env: Env, request: Request, kind: string, id: string): Prom
   } else if (kind === "settings" && !del) {
     const rows: Record<string, unknown> = {};
     if (b.tierConfig !== undefined) rows.tierConfig = b.tierConfig;
-    if (b.bg !== undefined) { rows.bg = b.bg ? { ...b.bg, imageUrl: "" } : null; rows.bgImageKey = keyOf(b.bg?.imageUrl); }
+    if (b.bg !== undefined) { const bg = b.bg as Record<string, unknown> | null; rows.bg = bg ? { ...bg, imageUrl: "" } : null; rows.bgImageKey = keyOf(bg?.imageUrl); }
     if (b.homeHero !== undefined) rows.homeHeroKey = keyOf(b.homeHero);
     await db.batch(Object.entries(rows).map(([k, v]) => db.prepare("INSERT INTO settings (key, value_json) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json").bind(k, JSON.stringify(v))));
   } else return bad("rota inválida", 404);
@@ -200,9 +200,9 @@ async function codes(env: Env, request: Request, rest: string): Promise<Response
     return Response.json(rows.results);
   }
   if (request.method === "POST" && !rest) {
-    const b = (await request.json().catch(() => ({}))) as Record<string, any>;
+    const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const code = typeof b.code === "string" ? b.code.trim().toUpperCase() : "";
-    const maxUses = Number.isInteger(b.maxUses) && b.maxUses >= 1 ? (b.maxUses as number) : 0;
+    const maxUses = typeof b.maxUses === "number" && Number.isInteger(b.maxUses) && b.maxUses >= 1 ? b.maxUses : 0;
     const startsAt = timestamp(b.startsAt);
     const expiresAt = timestamp(b.expiresAt);
     if (!/^[A-Z0-9-]{8,64}$/.test(code)) return bad("código deve ter de 8 a 64 letras, números ou hífen");

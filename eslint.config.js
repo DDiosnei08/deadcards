@@ -34,6 +34,8 @@ export default tseslint.config(
       "react-hooks/purity": "warn",
     },
   },
+  // Providers de contexto exportam o hook junto; recarregar a página inteira no HMR aqui é aceitável.
+  { files: ["src/lib/**/*.tsx"], rules: { "react-refresh/only-export-components": "off" } },
   {
     files: ["src/**/*.tsx"],
     plugins: { "better-tailwindcss": betterTailwind },

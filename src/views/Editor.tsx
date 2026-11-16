@@ -82,7 +82,11 @@ function Toast({ msg }: { msg: string }) {
 
 export function Editor({ editId, onEditId }: { editId: string | null; onEditId: (id: string | null) => void }) {
   const [section, setSection] = useState<Section>("card");
-  useEffect(() => { if (editId) setSection("card"); }, [editId]);
+  const [prevEditId, setPrevEditId] = useState(editId);
+  if (editId !== prevEditId) {
+    setPrevEditId(editId);
+    if (editId) setSection("card");
+  }
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -398,7 +402,6 @@ function HeroesForm() {
   const [name, setName] = useState(heroNames[0] ?? "Abrams");
   const [art, setArt] = useState(() => heroArt(name));
   const { busy, msg, run } = useSaver(reload);
-  useEffect(() => { setArt(heroArt(name)); }, [name]); // eslint-disable-line react-hooks/exhaustive-deps
   const sample: Player = { ...(players[0] ?? { id: "x", teamId: teams[0]?.id ?? "", position: "Flex", stats: { MIR: 85, MAC: 85, SUP: 85, MOV: 85, POL: 85, CON: 85 }, c1: "#0e7490", c2: "#082f49", history: [] }), name: name.toUpperCase(), hero: name, art: art ?? undefined, special: undefined };
 
   return (
@@ -409,7 +412,7 @@ function HeroesForm() {
           {heroNames.map((h) => {
             const icon = heroIcon(h);
             return (
-              <button key={h} type="button" onClick={() => setName(h)} title={h} aria-pressed={name === h}
+              <button key={h} type="button" onClick={() => { setName(h); setArt(heroArt(h)); }} title={h} aria-pressed={name === h}
                 className={`relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-zinc-900 ${name === h ? "border-white" : "border-zinc-200/10 opacity-70 hover:opacity-100"}`}>
                 {icon ? <img src={icon} alt={h} className="size-full object-cover" loading="lazy" /> : <span className="text-[9px] text-zinc-300">{h}</span>}
                 {heroes[h] && <span className="absolute top-0.5 right-0.5 size-2 rounded-full bg-emerald-400" aria-label="arte própria" />}
@@ -506,6 +509,7 @@ function codeStatus(c: Code, now: number) {
 function CodesForm() {
   const { players, teams } = useData();
   const [codes, setCodes] = useState<Code[]>([]);
+  const [now, setNow] = useState(0);
   const [code, setCode] = useState(randomCode);
   const [pick, setPick] = useState("");
   const [maxUses, setMaxUses] = useState(1);
@@ -521,7 +525,7 @@ function CodesForm() {
   const load = () =>
     fetch("/api/codes")
       .then((r) => (r.ok ? (r.json() as Promise<Code[]>) : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(setCodes)
+      .then((c) => { setCodes(c); setNow(Math.floor(Date.now() / 1000)); })
       .catch((e: Error) => setMsg(`Erro: ${e.message}`));
 
   useEffect(() => { load(); }, []);
@@ -555,7 +559,6 @@ function CodesForm() {
     }
   };
 
-  const now = Math.floor(Date.now() / 1000);
   const quick = "px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider border border-zinc-200/20 text-zinc-300 hover:text-white bg-zinc-900/60 cursor-pointer";
 
   return (
