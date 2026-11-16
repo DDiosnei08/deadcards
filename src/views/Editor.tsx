@@ -109,7 +109,7 @@ export function Editor({ editId, onEditId }: { editId: string | null; onEditId: 
 
 function blankPlayer(teamId: string): Player {
   const stats = { MIR: 88, MAC: 86, SUP: 82, MOV: 87, POL: 85, CON: 86 };
-  return { id: "", teamId, name: "", position: "Carry", hero: "Abrams", stats, ovr: calculateOVR(stats), c1: "#0e7490", c2: "#082f49", history: [], footer: "Deadlock Cards" };
+  return { id: "", teamId, name: "", position: "Carry", hero: "Abrams", stats, ovr: calculateOVR(stats), c1: "#0e7490", c2: "#082f49", history: [], footer: "Cardslock" };
 }
 
 function withHistory(p: Player, date: string, rebase: boolean): Player {

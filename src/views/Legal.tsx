@@ -21,7 +21,7 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     terms: {
       title: "Termos de uso",
       items: [
-        ["O projeto", "Deadlock Cards é um projeto de fã, gratuito e feito por diversão. Não é afiliado à Valve nem ao Deadlock."],
+        ["O projeto", "Cardslock é um projeto de fã, gratuito e feito por diversão. Não é afiliado à Valve nem ao Deadlock."],
         ["Cartas", "As cartas são colecionáveis digitais sem valor monetário. Não podem ser vendidas nem trocadas por dinheiro."],
         ["Seu perfil", "Você define o nome e os atributos da sua carta, e ela fica pública no seu perfil. Ela não entra na tier list nem em rankings. Nomes ofensivos ou que se passem por outra pessoa podem ser removidos."],
         ["Uso justo", "Não tente burlar códigos de resgate, automatizar acessos ou atrapalhar o site. Contas que fizerem isso podem ser removidas."],
@@ -47,7 +47,7 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     terms: {
       title: "Terms of use",
       items: [
-        ["The project", "Deadlock Cards is a free fan project made for fun. It is not affiliated with Valve or Deadlock."],
+        ["The project", "Cardslock is a free fan project made for fun. It is not affiliated with Valve or Deadlock."],
         ["Cards", "Cards are digital collectibles with no monetary value. They can't be sold or exchanged for money."],
         ["Your profile", "You set the name and attributes of your card, and it is public on your profile. It doesn't enter the tier list or any ranking. Offensive names or names that impersonate someone else may be removed."],
         ["Fair use", "Don't try to bypass redeem codes, automate access or disrupt the site. Accounts that do so may be removed."],
@@ -73,7 +73,7 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     terms: {
       title: "Términos de uso",
       items: [
-        ["El proyecto", "Deadlock Cards es un proyecto de fans, gratuito y hecho por diversión. No está afiliado a Valve ni a Deadlock."],
+        ["El proyecto", "Cardslock es un proyecto de fans, gratuito y hecho por diversión. No está afiliado a Valve ni a Deadlock."],
         ["Cartas", "Las cartas son coleccionables digitales sin valor monetario. No se pueden vender ni cambiar por dinero."],
         ["Tu perfil", "Tú defines el nombre y los atributos de tu carta, y queda pública en tu perfil. No entra en la tier list ni en ningún ranking. Los nombres ofensivos o que suplanten a otra persona pueden eliminarse."],
         ["Uso justo", "No intentes saltarte los códigos de canje, automatizar accesos ni perjudicar el sitio. Las cuentas que lo hagan pueden ser eliminadas."],

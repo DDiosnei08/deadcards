@@ -122,7 +122,7 @@ export function Card({ player, variant = "team", onOpen }: { player: Player; var
               className={`text-center ${medium ? "mt-2" : "mt-3"} leading-tight font-black uppercase`}
               style={{ fontSize: medium ? Math.round(footerSize * 0.85) : footerSize, letterSpacing: "0.2em", color: footerColor, textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
             >
-              {player.footer ?? "Deadlock Cards"}
+              {player.footer ?? "Cardslock"}
             </div>
           </div>
 

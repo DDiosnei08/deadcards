@@ -45,7 +45,7 @@ export function Login() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 240, damping: 22 }}
       >
-        <h1 className="font-display text-xl font-extrabold tracking-[0.18em] text-zinc-100 uppercase">Deadlock Cards</h1>
+        <h1 className="font-display text-xl font-extrabold tracking-[0.18em] text-zinc-100 uppercase">Cardslock</h1>
         <SignInOptions />
       </motion.div>
     </div>
