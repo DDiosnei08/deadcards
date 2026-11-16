@@ -1,16 +1,20 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useDeferredValue, useEffect, useRef, useState, type FormEvent } from "react";
 import { Card } from "../components/Card";
 import { CardExportButton } from "../components/CardExportButton";
 import { Range } from "../components/Range";
-import { STAT_KEYS, calculateOVR } from "../lib/cards";
+import { STAT_KEYS, calculateOVR, getPlayerOvr, teamOf } from "../lib/cards";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
-import { PROFILE_CARD_PATH, PROFILE_NAME_MAX, profilePlayer, profileUrl, type ProfileCard, type ProfileCardState, type PublicProfile } from "../lib/profile";
+import { PROFILE_CARD_PATH, PROFILE_NAME_MAX, profilePlayer, profileUrl, summarizeCollection, type ProfileCard, type ProfileCardState, type PublicProfile } from "../lib/profile";
 import { getCardTier } from "../lib/rarity";
 import { field, pageTitle, pill, primaryBtn } from "../lib/ui";
 
 const S = strings({
   pt: {
+    progress: "Progresso", best: "Maior OVR", catalog: (owned: number, total: number) => `${owned} de ${total} cartas`,
+    rarity: "Filtrar por raridade", all: "Todas", search: "Buscar cartas", searchPlaceholder: "Jogador, herói ou time…",
+    sort: "Ordenar cartas", sortOvr: "Ordenar: OVR", sortName: "Ordenar: Nome", sortTeam: "Ordenar: Time",
+    noResults: "Nenhuma carta corresponde aos filtros.", more: (n: number) => `Mostrar mais (${n})`,
     name: "Nome na carta", hero: "Herói", stats: "Atributos",
     hint: "Defina como você se vê no jogo. A carta aparece só no seu perfil, fora da tier list.",
     save: "Salvar carta", saving: "Salvando…", cancel: "Cancelar", unsaved: "Alterações não salvas.",
@@ -21,6 +25,10 @@ const S = strings({
     invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível carregar agora.", login: "Entre para editar sua carta.",
   },
   en: {
+    progress: "Progress", best: "Highest OVR", catalog: (owned: number, total: number) => `${owned} of ${total} cards`,
+    rarity: "Filter by rarity", all: "All", search: "Search cards", searchPlaceholder: "Player, hero or team…",
+    sort: "Sort cards", sortOvr: "Sort: OVR", sortName: "Sort: Name", sortTeam: "Sort: Team",
+    noResults: "No cards match your filters.", more: (n: number) => `Show more (${n})`,
     name: "Name on card", hero: "Hero", stats: "Attributes",
     hint: "Set how you see yourself in game. The card only shows on your profile, outside the tier list.",
     save: "Save card", saving: "Saving…", cancel: "Cancel", unsaved: "Unsaved changes.",
@@ -31,6 +39,10 @@ const S = strings({
     invalid_card: "Check the name, hero and attributes.", unavailable: "Could not load right now.", login: "Sign in to edit your card.",
   },
   es: {
+    progress: "Progreso", best: "OVR más alto", catalog: (owned: number, total: number) => `${owned} de ${total} cartas`,
+    rarity: "Filtrar por rareza", all: "Todas", search: "Buscar cartas", searchPlaceholder: "Jugador, héroe o equipo…",
+    sort: "Ordenar cartas", sortOvr: "Ordenar: OVR", sortName: "Ordenar: Nombre", sortTeam: "Ordenar: Equipo",
+    noResults: "Ninguna carta coincide con los filtros.", more: (n: number) => `Mostrar más (${n})`,
     name: "Nombre en la carta", hero: "Héroe", stats: "Atributos",
     hint: "Define cómo te ves en el juego. La carta solo aparece en tu perfil, fuera de la tier list.",
     save: "Guardar carta", saving: "Guardando…", cancel: "Cancelar", unsaved: "Cambios sin guardar.",
@@ -58,7 +70,7 @@ function issueOf(error: unknown): Issue {
 
 export function Profile({ userId, onOpenCard, onRedeem }: { userId: string; onOpenCard: (id: string) => void; onRedeem: () => void }) {
   const t = useT(S);
-  const { me, players, settings } = useData();
+  const { me, settings } = useData();
   const [profile, setProfile] = useState<PublicProfile>();
   const [error, setError] = useState<Issue>();
   const [editing, setEditing] = useState(false);
@@ -85,9 +97,6 @@ export function Profile({ userId, onOpenCard, onRedeem }: { userId: string; onOp
   if (!profile) return <p role="status" className="text-sm text-zinc-400">{t.loading}</p>;
 
   const owner = me?.id === profile.id;
-  const owned = new Set(profile.cards);
-  const cards = players.filter((p) => owned.has(p.id));
-
   const card = profile.card;
   const tier = card && getCardTier(profilePlayer(card), settings.tierConfig!);
   const identity = (
@@ -150,17 +159,91 @@ export function Profile({ userId, onOpenCard, onRedeem }: { userId: string; onOp
         </div>
       )}
 
-      <section aria-labelledby="profile-cards-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {cards.length}</h2>
-          {owner && <button type="button" onClick={onRedeem} className={pill(false)}>{t.redeem}</button>}
-        </div>
-        {cards.length ? (
-          <ul className="flex flex-wrap justify-center gap-6 sm:justify-start">
-            {cards.map((player) => <li key={player.id}><Card player={player} variant="medium" onOpen={() => onOpenCard(player.id)} /></li>)}
-          </ul>
-        ) : <p className="text-sm text-zinc-400">{t.noCards}</p>}
-      </section>
+      <ProfileCards ids={profile.cards} owner={owner} onOpenCard={onOpenCard} onRedeem={onRedeem} />
+    </section>
+  );
+}
+
+const PAGE = 18;
+type Sort = "ovr" | "name" | "team";
+
+function ProfileCards({ ids, owner, onOpenCard, onRedeem }: { ids: string[]; owner: boolean; onOpenCard: (id: string) => void; onRedeem: () => void }) {
+  const t = useT(S);
+  const { players, teams, settings } = useData();
+  const [q, setQ] = useState("");
+  const [rarity, setRarity] = useState<string>();
+  const [sort, setSort] = useState<Sort>("ovr");
+  const [limit, setLimit] = useState(PAGE);
+  const query = useDeferredValue(q.trim().toLowerCase());
+
+  const summary = summarizeCollection(players, ids, settings.tierConfig!);
+  const list = summary.cards
+    .filter((p) => !rarity || getCardTier(p, settings.tierConfig!).tierKey === rarity)
+    .filter((p) => !query || `${p.name} ${p.hero} ${teamOf(teams, p).name} ${teamOf(teams, p).tag}`.toLowerCase().includes(query))
+    .sort((a, b) => sort === "name" ? a.name.localeCompare(b.name)
+      : sort === "team" ? teamOf(teams, a).name.localeCompare(teamOf(teams, b).name) || a.name.localeCompare(b.name)
+        : getPlayerOvr(b) - getPlayerOvr(a) || a.name.localeCompare(b.name));
+  const pick = (key?: string) => { setRarity(key); setLimit(PAGE); };
+
+  return (
+    <section aria-labelledby="profile-cards-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {summary.cards.length}</h2>
+        {owner && <button type="button" onClick={onRedeem} className={pill(false)}>{t.redeem}</button>}
+      </div>
+      {summary.cards.length ? (
+        <>
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
+            <div className="flex min-w-48 flex-1 flex-col gap-2">
+              <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">{t.progress}</span>
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <span className="font-display text-3xl font-black text-dl-text tabular-nums">{summary.percent}%</span>
+                <span className="text-sm text-zinc-400">{t.catalog(summary.cards.length, summary.total)}</span>
+              </div>
+              <div role="progressbar" aria-label={t.progress} aria-valuenow={summary.percent} aria-valuemin={0} aria-valuemax={100} className="h-1.5 rounded-full bg-zinc-800">
+                <div className="h-full rounded-full bg-dl-text" style={{ width: `${summary.percent}%` }} />
+              </div>
+            </div>
+            {summary.best && (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">{t.best}</span>
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <span className="font-display text-3xl font-black text-dl-text tabular-nums">{getPlayerOvr(summary.best)}</span>
+                  <span className="text-sm text-zinc-400">{summary.best.name}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div role="group" aria-label={t.rarity} className="flex flex-wrap gap-2">
+            <button type="button" aria-pressed={!rarity} onClick={() => pick()} className={pill(!rarity)}>{t.all}</button>
+            {summary.rarities.map((r) => (
+              <button key={r.tierKey} type="button" aria-pressed={rarity === r.tierKey} disabled={!r.count}
+                onClick={() => pick(rarity === r.tierKey ? undefined : r.tierKey)}
+                className={`${pill(rarity === r.tierKey)} disabled:cursor-not-allowed disabled:opacity-40`}>
+                <span aria-hidden="true" className="size-2 rounded-full" style={{ background: r.c }} />
+                {r.name}
+                <span className="tabular-nums opacity-70">{r.count}</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchPlaceholder} aria-label={t.search} className={`${field} min-w-0 flex-1 basis-56`} />
+            <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={t.sort} className={field}>
+              <option value="ovr">{t.sortOvr}</option>
+              <option value="name">{t.sortName}</option>
+              <option value="team">{t.sortTeam}</option>
+            </select>
+          </div>
+          {list.length ? (
+            <ul className="flex flex-wrap justify-center gap-6 sm:justify-start">
+              {list.slice(0, limit).map((player) => <li key={player.id}><Card player={player} variant="medium" onOpen={() => onOpenCard(player.id)} /></li>)}
+            </ul>
+          ) : <p role="status" className="text-sm text-zinc-400">{t.noResults}</p>}
+          {list.length > limit && (
+            <button type="button" onClick={() => setLimit((l) => l + PAGE)} className={`${primaryBtn} self-center`}>{t.more(list.length - limit)}</button>
+          )}
+        </>
+      ) : <p className="text-sm text-zinc-400">{t.noCards}</p>}
     </section>
   );
 }
