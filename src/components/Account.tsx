@@ -1,14 +1,9 @@
 import { AnimatePresence, motion } from "motion/react";
-import { createAuthClient } from "better-auth/client";
 import { useEffect, useRef, useState } from "react";
+import { auth } from "../lib/authClient";
 import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
 import { primaryBtn } from "../lib/ui";
-
-const auth = createAuthClient();
-
-export const signInWithTwitch = () => auth.signIn.social({ provider: "twitch", callbackURL: "/" });
-export const signInWithGoogle = () => auth.signIn.social({ provider: "google", callbackURL: "/" });
 
 export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (

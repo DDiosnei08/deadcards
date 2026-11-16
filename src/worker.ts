@@ -2,6 +2,7 @@
 import { createAuth, currentUser } from "./auth";
 import { profileCard, publicProfile } from "./profile";
 import { handleOf } from "./handles";
+import { accountLink } from "./link";
 import { PROFILE_CARD_PATH } from "./lib/profile";
 
 export interface Env {
@@ -267,8 +268,11 @@ export default {
     if (url.pathname.startsWith("/api/auth/")) return createAuth(env, request).handler(request);
     if (url.pathname === "/api/me") {
       const user = await currentUser(env, request);
-      return Response.json(user && { ...user, handle: await handleOf(env, user.id) });
+      if (!user) return Response.json(null);
+      const providers = await env.DB.prepare(`SELECT DISTINCT "providerId" AS p FROM "account" WHERE "userId" = ?`).bind(user.id).all<{ p: string }>();
+      return Response.json({ ...user, handle: await handleOf(env, user.id), providers: providers.results.map((r) => r.p) });
     }
+    if (url.pathname.startsWith("/api/account/link/")) return accountLink(env, request, url.pathname.slice("/api/account/link/".length));
     if (url.pathname === PROFILE_CARD_PATH) return profileCard(env, request);
     const profileUser = url.pathname.match(/^\/api\/users\/([^/]+)$/);
     if (profileUser && request.method === "GET") {

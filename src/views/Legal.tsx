@@ -9,9 +9,9 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     privacy: {
       title: "Privacidade",
       items: [
-        ["O que coletamos", "Só ao entrar com Twitch ou Google: nome, e-mail, foto de perfil e o ID da conta, fornecidos pelo próprio serviço. Guardamos também as cartas que você resgatou e a carta que você montar no perfil."],
+        ["O que coletamos", "Só ao entrar com Twitch ou Google: nome, e-mail, foto de perfil e o ID da conta, fornecidos pelo próprio serviço. Ao entrar com Google, lemos só o @ do seu canal do YouTube, com permissão de leitura. Da Twitch, lemos seu nick. Guardamos também as cartas que você resgatou e a carta que você montar no perfil."],
         ["Para que usamos", "Para manter você logado e mostrar seu perfil. Não vendemos e não usamos para anúncios."],
-        ["Perfil público", "Seu perfil tem um link público. Qualquer pessoa com o link vê seu nome, sua foto de perfil, a carta que você montou e as cartas que você resgatou. E-mail e ID da conta nunca aparecem."],
+        ["Perfil público", "Seu perfil tem um link público. Qualquer pessoa com o link vê seu nome, sua foto de perfil, a carta que você montou e as cartas que você resgatou. Seu @ (nick da Twitch ou do canal do YouTube) aparece no link. E-mail e ID da conta nunca aparecem. Se você vincular uma conta da Twitch e uma do Google, elas viram um perfil só, com as cartas das duas."],
         ["Cookies", "Usamos apenas cookies essenciais: o de sessão, para o login, e o cookie \"lang\", que guarda o idioma escolhido. Não há cookies de rastreamento nem analytics."],
         ["Idioma e país", "Na primeira visita, usamos o país, derivado do seu IP pela Cloudflare, só para sugerir o idioma do site. Esse dado não é armazenado."],
         ["Onde fica", "Os dados ficam na Cloudflare, que hospeda o site. Estatísticas de jogo vêm da API pública deadlock-api."],
@@ -35,9 +35,9 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     privacy: {
       title: "Privacy",
       items: [
-        ["What we collect", "Only when you sign in with Twitch or Google: your name, email, profile picture and account ID, provided by the service itself. We also store the cards you have redeemed and the card you build on your profile."],
+        ["What we collect", "Only when you sign in with Twitch or Google: your name, email, profile picture and account ID, provided by the service itself. When you sign in with Google, we read only your YouTube channel @, with read-only permission. From Twitch, we read your username. We also store the cards you have redeemed and the card you build on your profile."],
         ["What we use it for", "To keep you signed in and show your profile. We don't sell it or use it for ads."],
-        ["Public profile", "Your profile has a public link. Anyone with the link can see your name, your profile picture, the card you built and the cards you have redeemed. Your email and account ID are never shown."],
+        ["Public profile", "Your profile has a public link. Anyone with the link can see your name, your profile picture, the card you built and the cards you have redeemed. Your @ (Twitch username or YouTube channel handle) shows in the link. Your email and account ID are never shown. If you link a Twitch and a Google account, they become a single profile with the cards from both."],
         ["Cookies", "We only use essential cookies: the session cookie, for sign-in, and the \"lang\" cookie, which stores the language you picked. There are no tracking cookies and no analytics."],
         ["Language and country", "On your first visit, we use your country, derived from your IP by Cloudflare, only to suggest the site's language. This data is not stored."],
         ["Where it lives", "The data is kept on Cloudflare, which hosts the site. Game stats come from the public deadlock-api."],
@@ -61,9 +61,9 @@ const S = strings<{ updated: (date: string) => string; privacy: Page; terms: Pag
     privacy: {
       title: "Privacidad",
       items: [
-        ["Qué recopilamos", "Solo cuando inicias sesión con Twitch o Google: nombre, correo, foto de perfil e ID de la cuenta, que nos da el propio servicio. También guardamos las cartas que canjeaste y la carta que armes en tu perfil."],
+        ["Qué recopilamos", "Solo cuando inicias sesión con Twitch o Google: nombre, correo, foto de perfil e ID de la cuenta, que nos da el propio servicio. Al iniciar sesión con Google, leemos solo el @ de tu canal de YouTube, con permiso de lectura. De Twitch, leemos tu nick. También guardamos las cartas que canjeaste y la carta que armes en tu perfil."],
         ["Para qué lo usamos", "Para mantenerte con la sesión iniciada y mostrar tu perfil. No lo vendemos y no lo usamos para anuncios."],
-        ["Perfil público", "Tu perfil tiene un enlace público. Cualquiera con el enlace ve tu nombre, tu foto de perfil, la carta que armaste y las cartas que canjeaste. El correo y el ID de la cuenta nunca aparecen."],
+        ["Perfil público", "Tu perfil tiene un enlace público. Cualquiera con el enlace ve tu nombre, tu foto de perfil, la carta que armaste y las cartas que canjeaste. Tu @ (nick de Twitch o del canal de YouTube) aparece en el enlace. El correo y el ID de la cuenta nunca aparecen. Si vinculas una cuenta de Twitch y una de Google, se convierten en un solo perfil con las cartas de ambas."],
         ["Cookies", "Solo usamos cookies esenciales: la de sesión, para el inicio de sesión, y la cookie \"lang\", que guarda el idioma que elegiste. No hay cookies de rastreo ni analíticas."],
         ["Idioma y país", "En tu primera visita usamos el país, que Cloudflare deriva de tu IP, solo para sugerirte el idioma del sitio. Ese dato no se almacena."],
         ["Dónde se guarda", "Los datos están en Cloudflare, que aloja el sitio. Las estadísticas de juego vienen de la API pública deadlock-api."],

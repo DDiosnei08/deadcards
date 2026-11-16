@@ -16,21 +16,24 @@ function mockProviders(twitch: unknown, youtube: unknown) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("handle do perfil", () => {
-  it("usa o login da Twitch e o @ do canal do YouTube", async () => {
+  it("usa o nick da Twitch e o @ do YouTube no mesmo espaço, sem tomar o @ de outro provedor", async () => {
     const { userId: streamer } = await login("Hagizao");
     const { userId: youtuber } = await login("Victor Barroso", ["google"]);
+    const { userId: other } = await login("Outro", ["google"]);
     mockProviders("hagizao", "@Hagizao");
     await syncHandle(env, { userId: streamer, providerId: "twitch", accessToken: "t" });
     await syncHandle(env, { userId: youtuber, providerId: "google", accessToken: "t" });
+    mockProviders("x", "@outro.canal");
+    await syncHandle(env, { userId: other, providerId: "google", accessToken: "t" });
     expect(await handleOf(env, streamer)).toBe("hagizao");
-    expect(await handleOf(env, youtuber)).toBe("@hagizao");
+    expect(await handleOf(env, youtuber)).toBeNull();
+    expect(await handleOf(env, other)).toBe("outro.canal");
 
     vi.unstubAllGlobals();
-    const byTwitch = await SELF.fetch("http://test/api/users/hagizao").then((r) => r.json<PublicProfile>());
-    const byYoutube = await SELF.fetch("http://test/api/users/%40HAGIZAO").then((r) => r.json<PublicProfile>());
-    expect(byTwitch).toMatchObject({ id: streamer, handle: "hagizao", name: "Hagizao" });
-    expect(byYoutube).toMatchObject({ id: youtuber, handle: "@hagizao" });
-    expect(await SELF.fetch(`http://test/api/users/${youtuber}`).then((r) => r.json())).toMatchObject({ handle: "@hagizao" });
+    for (const key of ["hagizao", "%40HAGIZAO", streamer]) {
+      expect(await SELF.fetch(`http://test/api/users/${key}`).then((r) => r.json())).toMatchObject({ id: streamer, handle: "hagizao", name: "Hagizao" });
+    }
+    expect(await SELF.fetch("http://test/api/users/@outro.canal").then((r) => r.json<PublicProfile>())).toMatchObject({ id: other });
     expect((await SELF.fetch("http://test/api/users/%E0%A4%A")).status).toBe(404);
   });
 
@@ -49,7 +52,7 @@ describe("handle do perfil", () => {
   it("mantém o provedor do primeiro handle e passa um nick reciclado para o novo dono", async () => {
     const { userId: first } = await login("first");
     const { userId: second } = await login("second");
-    mockProviders("oldnick", "@first");
+    mockProviders("oldnick", "@first-channel");
     await syncHandle(env, { userId: first, providerId: "twitch", accessToken: "t" });
     await syncHandle(env, { userId: first, providerId: "google", accessToken: "t" });
     expect(await handleOf(env, first)).toBe("oldnick");

@@ -31,7 +31,8 @@ export async function profileCard(env: Env, request: Request): Promise<Response>
 
 export async function publicProfile(env: Env, key: string): Promise<Response> {
   if (!/^@?[A-Za-z0-9._-]{1,64}$/.test(key)) return json({ code: "not_found" }, 404);
-  const userId = await env.DB.prepare("SELECT user_id FROM profile_handles WHERE handle = ?").bind(key).first<string>("user_id") ?? key;
+  const handle = key.replace(/^@/, "");
+  const userId = await env.DB.prepare("SELECT user_id FROM profile_handles WHERE handle = ?").bind(handle).first<string>("user_id") ?? handle;
   const [user, card, cards] = await env.DB.batch<{ name?: string; image?: string | null; handle?: string | null; snapshot?: string; player_id?: string }>([
     env.DB.prepare(`SELECT u.name, u.image, h.handle FROM "user" u LEFT JOIN profile_handles h ON h.user_id = u.id WHERE u.id = ?`).bind(userId),
     env.DB.prepare("SELECT snapshot FROM profile_cards WHERE user_id = ?").bind(userId),
