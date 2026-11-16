@@ -25,6 +25,7 @@ const S = strings({
     sortBy: (k: string) => `Ordenar: ${k}`,
     name: "Nome",
     allVersions: "Todas as versões",
+    onlySpecial: "Só especiais",
     more: (n: number) => `Mostrar mais (${n})`,
   },
   en: {
@@ -42,6 +43,7 @@ const S = strings({
     sortBy: (k: string) => `Sort: ${k}`,
     name: "Name",
     allVersions: "All versions",
+    onlySpecial: "Specials only",
     more: (n: number) => `Show more (${n})`,
   },
   es: {
@@ -59,6 +61,7 @@ const S = strings({
     sortBy: (k: string) => `Ordenar: ${k}`,
     name: "Nombre",
     allVersions: "Todas las versiones",
+    onlySpecial: "Solo especiales",
     more: (n: number) => `Mostrar más (${n})`,
   },
 });
@@ -73,13 +76,14 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
   const [role, setRole] = useState("ALL");
   const [sort, setSort] = useState<SortKey>("ovr");
   const [allVersions, setAllVersions] = useState(false);
+  const [onlySpecial, setOnlySpecial] = useState(false);
   const [limit, setLimit] = useState(PAGE);
   const query = useDeferredValue(q.trim().toLowerCase());
 
   const heroes = [...new Set(players.map((p) => p.hero))].sort();
   const roles = [...new Set(players.map((p) => p.position))].sort();
   const list = players
-    .filter((p) => (allVersions || isMainCard(p)) && (team === "ALL" || p.teamId === team) && (hero === "ALL" || p.hero === hero) && (role === "ALL" || p.position === role))
+    .filter((p) => (onlySpecial ? p.special : allVersions || isMainCard(p)) && (team === "ALL" || p.teamId === team) && (hero === "ALL" || p.hero === hero) && (role === "ALL" || p.position === role))
     .filter((p) => !query || `${p.name} ${p.hero} ${p.position} ${teamOf(teams, p).name}`.toLowerCase().includes(query))
     .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : sort === "ovr" ? getPlayerOvr(b) - getPlayerOvr(a) : b.stats[sort] - a.stats[sort]));
 
@@ -112,6 +116,10 @@ export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void })
           <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-zinc-300 sm:min-h-9">
             <input type="checkbox" className="size-4 accent-zinc-100" checked={allVersions} onChange={(e) => setAllVersions(e.target.checked)} />
             {t.allVersions}
+          </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-zinc-300 sm:min-h-9">
+            <input type="checkbox" className="size-4 accent-amber-300" checked={onlySpecial} onChange={(e) => { setOnlySpecial(e.target.checked); setLimit(PAGE); }} />
+            {t.onlySpecial}
           </label>
         </div>
       </div>
