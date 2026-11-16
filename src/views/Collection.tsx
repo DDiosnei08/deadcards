@@ -4,7 +4,7 @@ import { useData } from "../lib/data";
 import { getPlayerOvr, isMainCard, teamOf, useLabel } from "../lib/cards";
 import { Card } from "../components/Card";
 import { strings, useT } from "../lib/i18n";
-import { field, pageTitle, pill, primaryBtn } from "../lib/ui";
+import { field, pageTitle, primaryBtn } from "../lib/ui";
 
 type SortKey = "ovr" | "name" | "MIR" | "MAC" | "SUP" | "MOV" | "POL" | "CON";
 const PAGE = 24;
@@ -12,7 +12,6 @@ const PAGE = 24;
 const S = strings({
   pt: {
     title: "Coleção",
-    myCollection: "Minha coleção",
     count: (n: number) => `${n} ${n === 1 ? "carta" : "cartas"}`,
     searchPlaceholder: "Buscar jogador, herói, time…",
     search: "Buscar",
@@ -30,7 +29,6 @@ const S = strings({
   },
   en: {
     title: "Collection",
-    myCollection: "My collection",
     count: (n: number) => `${n} ${n === 1 ? "card" : "cards"}`,
     searchPlaceholder: "Search player, hero, team…",
     search: "Search",
@@ -48,7 +46,6 @@ const S = strings({
   },
   es: {
     title: "Colección",
-    myCollection: "Mi colección",
     count: (n: number) => `${n} ${n === 1 ? "carta" : "cartas"}`,
     searchPlaceholder: "Buscar jugador, héroe, equipo…",
     search: "Buscar",
@@ -66,7 +63,7 @@ const S = strings({
   },
 });
 
-export function Collection({ onOpenCard, onOpenMyCollection }: { onOpenCard: (id: string) => void; onOpenMyCollection?: () => void }) {
+export function Collection({ onOpenCard }: { onOpenCard: (id: string) => void }) {
   const t = useT(S);
   const label = useLabel();
   const { teams, players } = useData();
@@ -89,12 +86,9 @@ export function Collection({ onOpenCard, onOpenMyCollection }: { onOpenCard: (id
   return (
     <section className="space-y-5">
       <div className="noir-glass space-y-4 rounded-2xl p-5 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className={pageTitle}>{t.title}</h1>
-            <p className="mt-1.5 text-xs text-zinc-400">{t.count(list.length)}</p>
-          </div>
-          {onOpenMyCollection && <button type="button" className={pill(false)} onClick={onOpenMyCollection}>{t.myCollection}</button>}
+        <div>
+          <h1 className={pageTitle}>{t.title}</h1>
+          <p className="mt-1.5 text-xs text-zinc-400">{t.count(list.length)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchPlaceholder} aria-label={t.search} className={`${field} w-60`} />

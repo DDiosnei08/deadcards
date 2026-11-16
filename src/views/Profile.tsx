@@ -5,46 +5,43 @@ import { Range } from "../components/Range";
 import { STAT_KEYS, calculateOVR } from "../lib/cards";
 import { useData } from "../lib/data";
 import { strings, useLocale, useT } from "../lib/i18n";
-import { PROFILE_CARD_PATH, PROFILE_COLLECTION_PATH, PROFILE_NAME_MAX, profilePlayer, type ProfileCard, type ProfileCardState, type ProfileCollectionRedeem } from "../lib/profile";
+import { PROFILE_CARD_PATH, PROFILE_NAME_MAX, profilePlayer, profileUrl, type ProfileCard, type ProfileCardState, type PublicProfile } from "../lib/profile";
 import { field, pageTitle, pill, primaryBtn } from "../lib/ui";
 
 const S = strings({
   pt: {
-    title: "Meu perfil", collection: "Minha coleção", name: "Nome na carta", hero: "Herói", stats: "Seus atributos",
-    hint: "Defina como você se vê no jogo. A carta não entra na tier list.",
-    save: "Salvar no meu perfil", saving: "Salvando…", saved: "Carta salva no seu perfil.", unsaved: "Alterações não salvas.",
-    collect: "Resgatar na minha coleção", collecting: "Resgatando…", collected: "Carta resgatada na sua coleção.", alreadyCollected: "Esta versão já está na sua coleção.", viewCollection: "Ver na minha coleção",
-    loading: "Carregando sua carta…", history: "Histórico de versões", updated: "Última atualização",
-    publish: "Entrar no ranking", unpublish: "Sair do ranking",
-    public: "Sua carta aparece no ranking da página inicial.", private: "Publique a carta para aparecer no ranking da página inicial.",
-    invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível salvar agora.", login: "Entre para acessar sua carta.",
-    save_first: "Salve esta carta no perfil primeiro.",
+    name: "Nome na carta", hero: "Herói", stats: "Atributos",
+    hint: "Defina como você se vê no jogo. A carta aparece só no seu perfil, fora da tier list.",
+    save: "Salvar carta", saving: "Salvando…", cancel: "Cancelar", unsaved: "Alterações não salvas.",
+    loading: "Carregando perfil…", history: "Histórico de versões",
+    edit: "Editar carta", create: "Montar minha carta", share: "Copiar link", copied: "Link copiado.", copyFailed: "Não foi possível copiar o link.",
+    noCard: "Ainda não montou uma carta.", cards: "Cartas resgatadas", noCards: "Nenhuma carta resgatada ainda.",
+    not_found: "Perfil não encontrado.",
+    invalid_card: "Confira o nome, o herói e os atributos.", unavailable: "Não foi possível carregar agora.", login: "Entre para editar sua carta.",
   },
   en: {
-    title: "My profile", collection: "My collection", name: "Name on card", hero: "Hero", stats: "Your attributes",
-    hint: "Set how you see yourself in game. This card does not enter the tier list.",
-    save: "Save to my profile", saving: "Saving…", saved: "Card saved to your profile.", unsaved: "Unsaved changes.",
-    collect: "Redeem to my collection", collecting: "Redeeming…", collected: "Card added to your collection.", alreadyCollected: "This version is already in your collection.", viewCollection: "See in my collection",
-    loading: "Loading your card…", history: "Version history", updated: "Last updated",
-    publish: "Join the leaderboard", unpublish: "Leave the leaderboard",
-    public: "Your card appears on the home leaderboard.", private: "Publish the card to appear on the home leaderboard.",
-    invalid_card: "Check the name, hero and attributes.", unavailable: "Could not save right now.", login: "Sign in to access your card.",
-    save_first: "Save this card to your profile first.",
+    name: "Name on card", hero: "Hero", stats: "Attributes",
+    hint: "Set how you see yourself in game. The card only shows on your profile, outside the tier list.",
+    save: "Save card", saving: "Saving…", cancel: "Cancel", unsaved: "Unsaved changes.",
+    loading: "Loading profile…", history: "Version history",
+    edit: "Edit card", create: "Build my card", share: "Copy link", copied: "Link copied.", copyFailed: "Could not copy the link.",
+    noCard: "No card built yet.", cards: "Redeemed cards", noCards: "No cards redeemed yet.",
+    not_found: "Profile not found.",
+    invalid_card: "Check the name, hero and attributes.", unavailable: "Could not load right now.", login: "Sign in to edit your card.",
   },
   es: {
-    title: "Mi perfil", collection: "Mi colección", name: "Nombre en la carta", hero: "Héroe", stats: "Tus atributos",
-    hint: "Define cómo te ves en el juego. La carta no entra en la tier list.",
-    save: "Guardar en mi perfil", saving: "Guardando…", saved: "Carta guardada en tu perfil.", unsaved: "Cambios sin guardar.",
-    collect: "Canjear en mi colección", collecting: "Canjeando…", collected: "Carta canjeada en tu colección.", alreadyCollected: "Esta versión ya está en tu colección.", viewCollection: "Ver en mi colección",
-    loading: "Cargando tu carta…", history: "Historial de versiones", updated: "Última actualización",
-    publish: "Entrar en la clasificación", unpublish: "Salir de la clasificación",
-    public: "Tu carta aparece en la clasificación de inicio.", private: "Publica la carta para aparecer en la clasificación de inicio.",
-    invalid_card: "Revisa el nombre, el héroe y los atributos.", unavailable: "No se pudo guardar ahora.", login: "Inicia sesión para acceder a tu carta.",
-    save_first: "Guarda esta carta en tu perfil primero.",
+    name: "Nombre en la carta", hero: "Héroe", stats: "Atributos",
+    hint: "Define cómo te ves en el juego. La carta solo aparece en tu perfil, fuera de la tier list.",
+    save: "Guardar carta", saving: "Guardando…", cancel: "Cancelar", unsaved: "Cambios sin guardar.",
+    loading: "Cargando perfil…", history: "Historial de versiones",
+    edit: "Editar carta", create: "Armar mi carta", share: "Copiar enlace", copied: "Enlace copiado.", copyFailed: "No se pudo copiar el enlace.",
+    noCard: "Todavía no armó una carta.", cards: "Cartas canjeadas", noCards: "Todavía no canjeó cartas.",
+    not_found: "Perfil no encontrado.",
+    invalid_card: "Revisa el nombre, el héroe y los atributos.", unavailable: "No se pudo cargar ahora.", login: "Inicia sesión para editar tu carta.",
   },
 });
 
-type Issue = "invalid_card" | "unavailable" | "login" | "save_first";
+type Issue = "invalid_card" | "unavailable" | "login" | "not_found";
 
 async function profileRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init);
@@ -55,157 +52,185 @@ async function profileRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 function issueOf(error: unknown): Issue {
   const code = error instanceof Error ? error.message : "";
-  return code === "invalid_card" || code === "login" || code === "save_first" ? code : "unavailable";
+  return code === "invalid_card" || code === "login" || code === "not_found" ? code : "unavailable";
 }
 
-const sendJson = (method: string, body?: unknown): RequestInit =>
-  ({ method, headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+export function Profile({ userId, onOpenCard }: { userId: string; onOpenCard: (id: string) => void }) {
+  const t = useT(S);
+  const { me, players } = useData();
+  const [profile, setProfile] = useState<PublicProfile>();
+  const [error, setError] = useState<Issue>();
+  const [editing, setEditing] = useState(false);
+  const [copy, setCopy] = useState<"copied" | "copyFailed">();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const owner = me?.id === userId;
 
-const secondary = `${pill(false)} disabled:cursor-not-allowed disabled:opacity-50`;
+  useEffect(() => {
+    const controller = new AbortController();
+    profileRequest<PublicProfile>(`/api/users/${encodeURIComponent(userId)}`, { signal: controller.signal })
+      .then(setProfile)
+      .catch((e) => { if (!controller.signal.aborted) setError(issueOf(e)); });
+    return () => controller.abort();
+  }, [userId]);
 
-export function Profile({ onOpenCollection }: { onOpenCollection: () => void }) {
+  const share = () => {
+    navigator.clipboard.writeText(location.origin + profileUrl(userId))
+      .then(() => setCopy("copied"), () => setCopy("copyFailed"));
+  };
+
+  if (error) return <p role="alert" className="text-sm text-red-300">{t[error]}</p>;
+  if (!profile) return <p role="status" className="text-sm text-zinc-400">{t.loading}</p>;
+
+  const owned = new Set(profile.cards);
+  const cards = players.filter((p) => owned.has(p.id));
+
+  return (
+    <section className="mx-auto flex max-w-6xl flex-col gap-6" aria-labelledby="profile-title">
+      <header className="noir-glass flex flex-wrap items-center justify-between gap-5 rounded-2xl p-4 sm:p-6">
+        <div className="flex min-w-0 items-center gap-3">
+          {profile.image
+            ? <img src={profile.image} alt="" className="size-12 shrink-0 rounded-xl object-cover sm:size-16" />
+            : <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-xl font-black text-dl-text sm:size-16">{profile.name.charAt(0).toUpperCase()}</span>}
+          <h1 id="profile-title" className={`${pageTitle} min-w-0 truncate`}>{profile.name}</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {copy && <p role="status" className={`text-sm ${copy === "copied" ? "text-emerald-300" : "text-red-300"}`}>{t[copy]}</p>}
+          <button type="button" onClick={share} className={pill(false)}>{t.share}</button>
+          {owner && !editing && <button type="button" onClick={() => setEditing(true)} className={primaryBtn}>{profile.card ? t.edit : t.create}</button>}
+        </div>
+      </header>
+
+      {editing ? (
+        <ProfileEditor
+          onCancel={() => setEditing(false)}
+          onSaved={(card) => { setProfile({ ...profile, card }); setEditing(false); }}
+        />
+      ) : (
+        <div className="noir-glass flex flex-col items-center gap-4 rounded-2xl p-3 sm:p-6">
+          {profile.card ? (
+            <>
+              <div ref={cardRef} className="w-fit max-w-full"><Card player={profilePlayer(profile.card)} variant="editor" /></div>
+              <CardExportButton cardRef={cardRef} name={profile.card.name} />
+            </>
+          ) : <p className="text-sm text-zinc-400">{t.noCard}</p>}
+        </div>
+      )}
+
+      <section aria-labelledby="profile-cards-title" className="noir-glass flex flex-col gap-5 rounded-2xl p-4 sm:p-6">
+        <h2 id="profile-cards-title" className="font-display text-lg font-black text-dl-text">{t.cards} · {cards.length}</h2>
+        {cards.length ? (
+          <ul className="flex flex-wrap justify-center gap-6 sm:justify-start">
+            {cards.map((player) => <li key={player.id}><Card player={player} variant="medium" onOpen={() => onOpenCard(player.id)} /></li>)}
+          </ul>
+        ) : <p className="text-sm text-zinc-400">{t.noCards}</p>}
+      </section>
+    </section>
+  );
+}
+
+function ProfileEditor({ onSaved, onCancel }: { onSaved: (card: ProfileCard) => void; onCancel: () => void }) {
   const t = useT(S);
   const locale = useLocale();
   const { me, heroNames } = useData();
-  const [profile, setProfile] = useState<ProfileCardState>();
+  const [state, setState] = useState<ProfileCardState>();
   const [draft, setDraft] = useState<ProfileCard>();
-  const [busy, setBusy] = useState<"save" | "publish" | "collect">();
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Issue>();
-  const [saved, setSaved] = useState(false);
-  const [claim, setClaim] = useState<ProfileCollectionRedeem>();
-  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     profileRequest<ProfileCardState>(PROFILE_CARD_PATH, { signal: controller.signal })
-      .then(setProfile)
+      .then(setState)
       .catch((e) => { if (!controller.signal.aborted) setError(issueOf(e)); });
     return () => controller.abort();
   }, []);
 
-  const current = profile?.history[0];
-  const card = draft ?? current?.card ?? (profile && {
+  const current = state?.history[0];
+  const card = draft ?? current?.card ?? (state && {
     name: (me?.name ?? "").slice(0, PROFILE_NAME_MAX),
     hero: heroNames[0] ?? "Abrams",
     stats: { MIR: 50, MAC: 50, SUP: 50, MOV: 50, POL: 50, CON: 50 },
   });
   const dirty = !!card && JSON.stringify(card) !== JSON.stringify(current?.card);
-  const collected = claim && JSON.stringify(claim.card.card) === JSON.stringify(current?.card) ? claim : undefined;
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const update = (patch: Partial<ProfileCard>) => { if (card) setDraft({ ...card, ...patch }); };
 
-  const run = async (kind: NonNullable<typeof busy>, action: () => Promise<void>) => {
-    setError(undefined);
-    setBusy(kind);
-    try { await action(); } catch (e) { setError(issueOf(e)); } finally { setBusy(undefined); }
-  };
-
-  const save = (e: FormEvent<HTMLFormElement>) => {
+  const save = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!card) return;
-    void run("save", async () => {
-      setProfile(await profileRequest<ProfileCardState>(PROFILE_CARD_PATH, sendJson("PUT", { ...card, name: card.name.trim() })));
-      setDraft(undefined);
-      setSaved(true);
-    });
+    setError(undefined);
+    setBusy(true);
+    try {
+      const next = await profileRequest<ProfileCardState>(PROFILE_CARD_PATH, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...card, name: card.name.trim() }),
+      });
+      onSaved(next.history[0].card);
+    } catch (err) {
+      setError(issueOf(err));
+    } finally {
+      setBusy(false);
+    }
   };
-  const togglePublished = () => run("publish", async () => {
-    setProfile(await profileRequest<ProfileCardState>(PROFILE_CARD_PATH, sendJson("PATCH", { published: !profile?.published })));
-  });
-  const collect = () => run("collect", async () => {
-    setClaim(await profileRequest<ProfileCollectionRedeem>(PROFILE_COLLECTION_PATH, sendJson("POST")));
-  });
-  const update = (patch: Partial<ProfileCard>) => {
-    setSaved(false);
-    if (card) setDraft({ ...card, ...patch });
-  };
+
+  if (!card) return error
+    ? <p role="alert" className="text-sm text-red-300">{t[error]}</p>
+    : <p role="status" className="text-sm text-zinc-400">{t.loading}</p>;
 
   return (
-    <section className="mx-auto flex max-w-5xl flex-col gap-6" aria-labelledby="profile-title">
-      <header className="noir-glass flex flex-wrap items-center justify-between gap-5 rounded-2xl p-4 sm:p-6">
-        <div className="flex min-w-0 items-center gap-3">
-          {me?.image
-            ? <img src={me.image} alt="" className="size-12 shrink-0 rounded-xl object-cover sm:size-16" />
-            : <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-xl font-black text-dl-text sm:size-16">{me?.name.charAt(0).toUpperCase()}</span>}
-          <div className="flex min-w-0 flex-col gap-1">
-            <h1 id="profile-title" className={pageTitle}>{t.title}</h1>
-            <p className="truncate text-sm text-zinc-300">{me?.name}</p>
+    <div className="noir-glass flex min-w-0 flex-col items-center gap-5 rounded-2xl p-3 sm:p-6 md:flex-row md:items-start">
+      <Card player={profilePlayer(card)} variant="editor" />
+      <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
+        <form onSubmit={save} className="flex flex-col gap-4">
+          <p className="text-sm text-zinc-400">{t.hint}</p>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex min-w-0 flex-1 basis-48 flex-col gap-1.5 text-sm font-semibold text-zinc-100">
+              {t.name}
+              <input value={card.name} onChange={(e) => update({ name: e.target.value })} maxLength={PROFILE_NAME_MAX} required
+                autoComplete="off" disabled={busy} className={`${field} disabled:opacity-60`} />
+            </label>
+            <label className="flex min-w-0 flex-1 basis-40 flex-col gap-1.5 text-sm font-semibold text-zinc-100">
+              {t.hero}
+              <select value={card.hero} onChange={(e) => update({ hero: e.target.value })} disabled={busy} className={`${field} disabled:opacity-60`}>
+                {!heroNames.includes(card.hero) && <option value={card.hero}>{card.hero}</option>}
+                {heroNames.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+            </label>
           </div>
-        </div>
-        <button type="button" onClick={onOpenCollection} className={primaryBtn}>{t.collection}</button>
-      </header>
-
-      {!card && !error && <p role="status" className="text-sm text-zinc-400">{t.loading}</p>}
-      {error && <p role="alert" className="text-sm text-red-300">{t[error]}</p>}
-
-      {card && (
-        <div className="noir-glass flex min-w-0 flex-col items-center gap-5 rounded-2xl p-3 sm:p-6 md:flex-row md:items-start">
-          <div ref={cardRef} className="w-fit max-w-full">
-            <Card player={profilePlayer(card)} variant="editor" />
+          <fieldset className="flex flex-col gap-3" disabled={busy}>
+            <legend className="mb-3 flex w-full items-center justify-between text-sm font-bold text-zinc-100">
+              {t.stats}
+              <span className="text-zinc-400 tabular-nums">OVR {calculateOVR(card.stats)}</span>
+            </legend>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+              {STAT_KEYS.map((k) => (
+                <Range key={k} label={k} value={card.stats[k]} min={1} max={99} onChange={(v) => update({ stats: { ...card.stats, [k]: v } })} />
+              ))}
+            </div>
+          </fieldset>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="submit" disabled={busy || !dirty} className={primaryBtn}>{busy ? t.saving : t.save}</button>
+            <button type="button" disabled={busy} onClick={onCancel} className={`${pill(false)} disabled:opacity-50`}>{t.cancel}</button>
+            {current && dirty && <p role="status" className="text-sm text-amber-200">{t.unsaved}</p>}
           </div>
-          <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
-            <form onSubmit={save} className="flex flex-col gap-4">
-              <p className="text-sm text-zinc-400">{t.hint}</p>
-              <div className="flex flex-wrap gap-3">
-                <label className="flex min-w-0 flex-1 basis-48 flex-col gap-1.5 text-sm font-semibold text-zinc-100">
-                  {t.name}
-                  <input value={card.name} onChange={(e) => update({ name: e.target.value })} maxLength={PROFILE_NAME_MAX} required
-                    autoComplete="off" disabled={!!busy} className={`${field} disabled:opacity-60`} />
-                </label>
-                <label className="flex min-w-0 flex-1 basis-40 flex-col gap-1.5 text-sm font-semibold text-zinc-100">
-                  {t.hero}
-                  <select value={card.hero} onChange={(e) => update({ hero: e.target.value })} disabled={!!busy} className={`${field} disabled:opacity-60`}>
-                    {!heroNames.includes(card.hero) && <option value={card.hero}>{card.hero}</option>}
-                    {heroNames.map((h) => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </label>
-              </div>
-              <fieldset className="flex flex-col gap-3" disabled={!!busy}>
-                <legend className="mb-3 flex w-full items-center justify-between text-sm font-bold text-zinc-100">
-                  {t.stats}
-                  <span className="text-zinc-400 tabular-nums">OVR {calculateOVR(card.stats)}</span>
-                </legend>
-                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                  {STAT_KEYS.map((k) => (
-                    <Range key={k} label={k} value={card.stats[k]} min={1} max={99} onChange={(v) => update({ stats: { ...card.stats, [k]: v } })} />
-                  ))}
-                </div>
-              </fieldset>
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="submit" disabled={!!busy || !dirty} className={primaryBtn}>{busy === "save" ? t.saving : t.save}</button>
-                {saved && !dirty && <p role="status" className="text-sm text-emerald-300">{t.saved}</p>}
-                {current && dirty && <p role="status" className="text-sm text-amber-200">{t.unsaved}</p>}
-              </div>
-            </form>
+          {error && <p role="alert" className="text-sm text-red-300">{t[error]}</p>}
+        </form>
 
-            {current && (
-              <div className="flex flex-col items-start gap-4">
-                <div className="flex flex-wrap items-start gap-2">
-                  <button type="button" disabled={!!busy} onClick={collected ? onOpenCollection : collect} className={secondary}>
-                    {collected ? t.viewCollection : busy === "collect" ? t.collecting : t.collect}
-                  </button>
-                  <button type="button" disabled={!!busy} onClick={togglePublished} className={secondary}>
-                    {busy === "publish" ? t.saving : profile?.published ? t.unpublish : t.publish}
-                  </button>
-                  <CardExportButton cardRef={cardRef} name={card.name} />
-                </div>
-                {collected && <p role="status" className="text-sm text-emerald-300">{collected.added ? t.collected : t.alreadyCollected}</p>}
-                <p role="status" className="text-sm text-zinc-400">{profile?.published ? t.public : t.private}</p>
-                <div className="flex w-full flex-col gap-2">
-                  <h2 className="text-sm font-bold text-zinc-100">{t.history}</h2>
-                  <ol className="flex flex-col gap-2">
-                    {profile.history.map(({ id, updatedAt, card }) => (
-                      <li key={id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg bg-zinc-900/70 p-3 text-sm text-zinc-300">
-                        <time dateTime={new Date(updatedAt).toISOString()} className="font-semibold text-zinc-100">{date.format(updatedAt)}</time>
-                        <span>{card.hero} · OVR {calculateOVR(card.stats)}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            )}
+        {!!state?.history.length && (
+          <div className="flex w-full flex-col gap-2">
+            <h2 className="text-sm font-bold text-zinc-100">{t.history}</h2>
+            <ol className="flex flex-col gap-2">
+              {state.history.map(({ id, updatedAt, card: version }) => (
+                <li key={id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg bg-zinc-900/70 p-3 text-sm text-zinc-300">
+                  <time dateTime={new Date(updatedAt).toISOString()} className="font-semibold text-zinc-100">{date.format(updatedAt)}</time>
+                  <span>{version.hero} · OVR {calculateOVR(version.stats)}</span>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </div>
+    </div>
   );
 }

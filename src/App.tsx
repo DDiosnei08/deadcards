@@ -17,7 +17,7 @@ import { LANGS, LANG_LABEL, LangProvider, type Lang, strings, useLang, useT } fr
 import { Feedback } from "./views/Feedback";
 import { Icon } from "./components/Icon";
 import { Profile } from "./views/Profile";
-import { MyCollection } from "./views/MyCollection";
+import { profileUrl } from "./lib/profile";
 
 const REPO = "https://github.com/hagizao/deadcards";
 
@@ -29,7 +29,7 @@ function GitHubIcon() {
   );
 }
 
-type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "compare" | "editor" | "privacy" | "terms" | "feedback" | "profile" | "myCollection";
+type Tab = "home" | "teams" | "tierlist" | "collection" | "redeem" | "compare" | "editor" | "privacy" | "terms" | "feedback" | "profile";
 const TABS = ["teams", "tierlist", "collection", "compare", "redeem"] as const;
 
 const S = strings({
@@ -241,8 +241,11 @@ function Background() {
   );
 }
 
+const sharedProfile = () => /^\/u\/([A-Za-z0-9_-]{1,64})$/.exec(location.pathname)?.[1];
+
 function Shell() {
-  const [tab, setTab] = useState<Tab>("home");
+  const [profileId, setProfileId] = useState(sharedProfile);
+  const [tab, setTab] = useState<Tab>(profileId ? "profile" : "home");
   const [focusTeam, setFocusTeam] = useState<string>();
   const [spotlight, setSpotlight] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -251,7 +254,12 @@ function Shell() {
   const tabs = me?.admin ? [...TABS, "editor" as const] : TABS;
   const openTeam = (id: string) => { setFocusTeam(id); setTab("teams"); };
   const editCard = (id: string) => { setSpotlight(null); setEditId(id); setTab("editor"); };
-  useEffect(() => { window.scrollTo(0, 0); }, [tab]);
+  const openProfile = (id: string) => { setProfileId(id); setTab("profile"); };
+  useEffect(() => { window.scrollTo(0, 0); }, [tab, profileId]);
+  useEffect(() => {
+    const path = tab === "profile" && profileId ? profileUrl(profileId) : "/";
+    if (location.pathname !== path) history.replaceState(null, "", path);
+  }, [tab, profileId]);
 
   return (
     <>
@@ -279,7 +287,7 @@ function Shell() {
             ))}
           </nav>
           <LangMenu />
-          <div className="shrink-0"><Account onProfile={() => setTab("profile")} onCollection={() => setTab("myCollection")} /></div>
+          <div className="shrink-0"><Account onProfile={() => { if (me) openProfile(me.id); }} /></div>
         </div>
       </header>
 
@@ -293,14 +301,13 @@ function Shell() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            {tab === "home" && <Home onOpenTeam={openTeam} onOpenProfile={me ? () => setTab("profile") : undefined} />}
+            {tab === "home" && <Home onOpenTeam={openTeam} />}
             {tab === "teams" && <Teams focusTeamId={focusTeam} onOpenCard={setSpotlight} />}
             {tab === "tierlist" && <TierList onOpenCard={setSpotlight} onOpenTeam={openTeam} />}
-            {tab === "collection" && <Collection onOpenCard={setSpotlight} onOpenMyCollection={me ? () => setTab("myCollection") : undefined} />}
+            {tab === "collection" && <Collection onOpenCard={setSpotlight} />}
             {tab === "redeem" && <Redeem onOpenCard={setSpotlight} />}
             {tab === "compare" && <Compare onOpenCard={setSpotlight} />}
-            {tab === "profile" && me && <Profile onOpenCollection={() => setTab("myCollection")} />}
-            {tab === "myCollection" && me && <MyCollection onOpenProfile={() => setTab("profile")} onRedeemCode={() => setTab("redeem")} onOpenCard={setSpotlight} />}
+            {tab === "profile" && profileId && <Profile key={profileId} userId={profileId} onOpenCard={setSpotlight} />}
             {tab === "editor" && me?.admin && <Editor editId={editId} onEditId={setEditId} />}
             {(tab === "privacy" || tab === "terms") && <Legal page={tab} />}
             {tab === "feedback" && <Feedback />}

@@ -2,19 +2,17 @@ import { STAT_KEYS } from "./cards";
 import type { Player, Stats } from "./types";
 
 export const PROFILE_CARD_PATH = "/api/profile/card";
-export const PROFILE_COLLECTION_PATH = "/api/profile/collection";
-export const PROFILE_LEADERBOARD_PATH = "/api/profile/leaderboard";
 export const PROFILE_NAME_MAX = 24;
 
 export type ProfileCard = { name: string; hero: string; stats: Stats };
 
 export type ProfileCardVersion = { id: number; card: ProfileCard; updatedAt: number };
 
-export type ProfileCardState = { published: boolean; history: ProfileCardVersion[] };
+export type ProfileCardState = { history: ProfileCardVersion[] };
 
-export type ProfileLeaderboard = { cards: ProfileCard[]; nextPage: number | null };
-export type CollectedProfileCard = { id: number; card: ProfileCard; redeemedAt: number };
-export type ProfileCollectionRedeem = { card: CollectedProfileCard; added: boolean };
+export type PublicProfile = { name: string; image: string | null; card: ProfileCard | null; cards: string[] };
+
+export const profileUrl = (userId: string) => `/u/${encodeURIComponent(userId)}`;
 
 export function parseProfileCard(input: unknown): ProfileCard | null {
   if (!input || typeof input !== "object") return null;

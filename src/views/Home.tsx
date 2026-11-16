@@ -8,28 +8,14 @@ import { RegionBackdrop } from "../components/RegionBackdrop";
 import { TeamLogo3D } from "../components/TeamLogo3D";
 import { usePointerTilt } from "../lib/tilt";
 import { Icon } from "../components/Icon";
-import { ParticipantsRanking } from "../components/ParticipantsRanking";
-import { pill } from "../lib/ui";
 
 const S = strings({
-  pt: {
-    featured: "Herói em destaque", prev: "Herói anterior", next: "Próximo herói", none: "Nenhum time cadastrado ainda.",
-    players: (n: number) => `${n} ${n === 1 ? "jogador" : "jogadores"}`,
-    ranking: "Ranking", teams: "Times", participants: "Participantes",
-  },
-  en: {
-    featured: "Featured hero", prev: "Previous hero", next: "Next hero", none: "No teams registered yet.",
-    players: (n: number) => `${n} ${n === 1 ? "player" : "players"}`,
-    ranking: "Leaderboard", teams: "Teams", participants: "Participants",
-  },
-  es: {
-    featured: "Héroe destacado", prev: "Héroe anterior", next: "Siguiente héroe", none: "Aún no hay equipos registrados.",
-    players: (n: number) => `${n} ${n === 1 ? "jugador" : "jugadores"}`,
-    ranking: "Clasificación", teams: "Equipos", participants: "Participantes",
-  },
+  pt: { featured: "Herói em destaque", prev: "Herói anterior", next: "Próximo herói", none: "Nenhum time cadastrado ainda.", players: (n: number) => `${n} ${n === 1 ? "jogador" : "jogadores"}` },
+  en: { featured: "Featured hero", prev: "Previous hero", next: "Next hero", none: "No teams registered yet.", players: (n: number) => `${n} ${n === 1 ? "player" : "players"}` },
+  es: { featured: "Héroe destacado", prev: "Héroe anterior", next: "Siguiente héroe", none: "Aún no hay equipos registrados.", players: (n: number) => `${n} ${n === 1 ? "jugador" : "jugadores"}` },
 });
 
-export function Home({ onOpenTeam, onOpenProfile }: { onOpenTeam: (teamId: string) => void; onOpenProfile?: () => void }) {
+export function Home({ onOpenTeam }: { onOpenTeam: (teamId: string) => void }) {
   const { teams, players, settings, heroNames, heroArt } = useData();
   const t = useT(S);
   const label = useLabel();
@@ -41,8 +27,6 @@ export function Home({ onOpenTeam, onOpenProfile }: { onOpenTeam: (teamId: strin
     return settings.homeHero ? [{ name: "", url: settings.homeHero }, ...list] : list;
   }, [heroNames, heroArt, settings.homeHero]);
   const [[heroIdx, dir], setHero] = useState([0, 1]);
-  const [rankingOpen, setRankingOpen] = useState(true);
-  const [ranking, setRanking] = useState<"teams" | "participants">("teams");
   const slide = slides[heroIdx % Math.max(1, slides.length)];
   const hero = slide?.name;
   const homeImg = slide?.url;
@@ -90,40 +74,19 @@ export function Home({ onOpenTeam, onOpenProfile }: { onOpenTeam: (teamId: strin
         {hero && <div className="home-hero-tag">{hero}</div>}
       </div>
 
-      <aside aria-labelledby="home-ranking-title" className={`${rankingOpen ? "home-col" : ""} flex min-w-0 flex-col gap-3`}>
-        <h2 id="home-ranking-title">
-          <button type="button" aria-expanded={rankingOpen} aria-controls="home-ranking-body" onClick={() => setRankingOpen((open) => !open)}
-            className="noir-glass flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-4 py-2 text-left font-display text-lg font-black text-dl-text hover:bg-zinc-800/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100">
-            {t.ranking}
-            <Icon name={rankingOpen ? "chevron-up" : "chevron-down"} />
-          </button>
-        </h2>
-        <div id="home-ranking-body" hidden={!rankingOpen} className="min-h-0 flex-1">
-          {rankingOpen && (
-            <div className="flex h-full min-h-0 flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <button type="button" className={pill(ranking === "teams")} aria-pressed={ranking === "teams"} onClick={() => setRanking("teams")}>{t.teams}</button>
-                <button type="button" className={pill(ranking === "participants")} aria-pressed={ranking === "participants"} onClick={() => setRanking("participants")}>{t.participants}</button>
-              </div>
-              {ranking === "teams" ? (
-                <div className="home-teams-scroll flex min-h-0 flex-1 flex-col gap-4" style={{ "--fb": "120px" } as React.CSSProperties}>
-                  {ranked.length === 0 && <div className="noir-glass rounded-2xl p-6 text-sm text-zinc-300">{t.none}</div>}
-                  {ranked.map((r, idx) => (
-                    <TeamRow
-                      key={r.team.id}
-                      r={r}
-                      idx={idx}
-                      tier={r.count ? settings.tierConfig!.find((t) => t.key === tierKeyForOvr(r.rounded, settings.tierConfig!)) : undefined}
-                      meta={`${r.team.tag} · ${label(r.team.region)} · ${t.players(r.count)}`}
-                      onOpen={() => onOpenTeam(r.team.id)}
-                    />
-                  ))}
-                </div>
-              ) : <ParticipantsRanking onOpenProfile={onOpenProfile} />}
-            </div>
-          )}
-        </div>
-      </aside>
+      <div className="home-col home-teams-scroll flex flex-col gap-4" style={{ "--ft": "0px", "--fb": "120px" } as React.CSSProperties}>
+        {ranked.length === 0 && <div className="noir-glass rounded-2xl p-6 text-sm text-zinc-300">{t.none}</div>}
+        {ranked.map((r, idx) => (
+          <TeamRow
+            key={r.team.id}
+            r={r}
+            idx={idx}
+            tier={r.count ? settings.tierConfig!.find((t) => t.key === tierKeyForOvr(r.rounded, settings.tierConfig!)) : undefined}
+            meta={`${r.team.tag} · ${label(r.team.region)} · ${t.players(r.count)}`}
+            onOpen={() => onOpenTeam(r.team.id)}
+          />
+        ))}
+      </div>
     </section>
   );
 }
