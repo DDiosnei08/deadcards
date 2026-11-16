@@ -247,7 +247,7 @@ const sharedProfile = () => /^\/u\/((?:@|%40)?[A-Za-z0-9._-]{1,64})$/.exec(locat
 
 function Shell() {
   const [profileId, setProfileId] = useState(sharedProfile);
-  const [tab, setTab] = useState<Tab>(profileId ? "profile" : "home");
+  const [tab, setTab] = useState<Tab>(() => profileId ? "profile" : location.pathname === "/privacy" ? "privacy" : location.pathname === "/terms" ? "terms" : "home");
   const [focusTeam, setFocusTeam] = useState<string>();
   const [spotlight, setSpotlight] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -264,7 +264,7 @@ function Shell() {
     void finishLink().then((result) => { if (result) { setLinkResult(result); setTab("settings"); } });
   }, []);
   useEffect(() => {
-    const path = tab === "profile" && profileId ? profileUrl(profileId) : "/";
+    const path = tab === "profile" && profileId ? profileUrl(profileId) : tab === "privacy" || tab === "terms" ? `/${tab}` : "/";
     if (location.pathname !== path) history.replaceState(null, "", path);
   }, [tab, profileId]);
 
