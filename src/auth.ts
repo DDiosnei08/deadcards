@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import type { Env } from "./worker";
+import { syncHandle } from "./handles";
 
 export function createAuth(env: Env, request: Request) {
   return betterAuth({
@@ -10,7 +11,13 @@ export function createAuth(env: Env, request: Request) {
     disabledPaths: ["/update-user", "/change-email", "/link-social"],
     socialProviders: {
       twitch: { clientId: env.TWITCH_CLIENT_ID, clientSecret: env.TWITCH_CLIENT_SECRET },
-      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
+      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET, scope: ["https://www.googleapis.com/auth/youtube.readonly"] },
+    },
+    databaseHooks: {
+      account: {
+        create: { after: (account) => syncHandle(env, account) },
+        update: { after: (account) => syncHandle(env, account) },
+      },
     },
     session: { cookieCache: { enabled: true, maxAge: 5 * 60, strategy: "jwe" } },
     account: { storeStateStrategy: "cookie", storeAccountCookie: false },

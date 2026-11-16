@@ -1,14 +1,9 @@
 import { AnimatePresence, motion } from "motion/react";
-import { createAuthClient } from "better-auth/client";
 import { useEffect, useRef, useState } from "react";
+import { auth } from "../lib/authClient";
 import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
 import { primaryBtn } from "../lib/ui";
-
-const auth = createAuthClient();
-
-export const signInWithTwitch = () => auth.signIn.social({ provider: "twitch", callbackURL: "/" });
-export const signInWithGoogle = () => auth.signIn.social({ provider: "google", callbackURL: "/" });
 
 export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -19,12 +14,12 @@ export function TwitchIcon({ className = "w-4 h-4" }: { className?: string }) {
 }
 
 const S = strings({
-  pt: { signIn: "Entrar", signOut: "Sair" },
-  en: { signIn: "Sign in", signOut: "Sign out" },
-  es: { signIn: "Ingresar", signOut: "Salir" },
+  pt: { signIn: "Entrar", signOut: "Sair", profile: "Meu perfil", settings: "Configurações", account: "Menu da conta" },
+  en: { signIn: "Sign in", signOut: "Sign out", profile: "My profile", settings: "Settings", account: "Account menu" },
+  es: { signIn: "Ingresar", signOut: "Salir", profile: "Mi perfil", settings: "Configuración", account: "Menú de la cuenta" },
 });
 
-export function Account() {
+export function Account({ onProfile, onSettings }: { onProfile: () => void; onSettings: () => void }) {
   const t = useT(S);
   const { me } = useData();
   const [open, setOpen] = useState(false);
@@ -60,6 +55,7 @@ export function Account() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         whileTap={{ scale: 0.95 }}
+        aria-label={t.account}
         aria-expanded={open}
         aria-haspopup="menu"
         className="flex cursor-pointer items-center gap-2 rounded-full border border-zinc-200/25 bg-zinc-900/70 p-1 shadow-[0_0_14px_rgba(244,244,245,0.15)] hover:border-zinc-200/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-100 sm:pr-3"
@@ -80,6 +76,22 @@ export function Account() {
             <div className="mb-1 flex items-center gap-2 border-b border-zinc-200/10 p-2">
               <span className="truncate text-sm font-bold text-zinc-100">{me.name}</span>
             </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onProfile(); }}
+              className="min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-sm text-zinc-300 hover:bg-zinc-800/70 hover:text-white focus-visible:outline-2 focus-visible:outline-zinc-100 active:bg-zinc-700"
+            >
+              {t.profile}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onSettings(); }}
+              className="min-h-11 w-full cursor-pointer rounded-lg px-2 text-left text-sm text-zinc-300 hover:bg-zinc-800/70 hover:text-white focus-visible:outline-2 focus-visible:outline-zinc-100 active:bg-zinc-700"
+            >
+              {t.settings}
+            </button>
             <button
               type="button"
               role="menuitem"

@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { useData } from "../lib/data";
@@ -7,6 +7,7 @@ import { strings, useLocale, useT } from "../lib/i18n";
 import { getPlayerHistory, getPlayerOvr, getPlayerTrend, isMainCard, teamOf, useLabel } from "../lib/cards";
 import { getCardTier } from "../lib/rarity";
 import { Card } from "./Card";
+import { CardExportButton } from "./CardExportButton";
 import { TrendBadge } from "./TrendBadge";
 import { Icon } from "./Icon";
 import { pill } from "../lib/ui";
@@ -28,6 +29,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
   const cardRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
+  const [exportReadyId, setExportReadyId] = useState<string>();
   const tier = player ? getCardTier(player, settings.tierConfig!) : null;
   const ovr = player ? getPlayerOvr(player) : 0;
   const reveal = useMemo(
@@ -40,7 +42,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
     revealed.add(playerId);
     const ovrEl = cardRef.current.querySelector("[data-ovr]")?.firstChild;
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ delay: 0.12 });
+      const tl = gsap.timeline({ delay: 0.12, onComplete: () => setExportReadyId(playerId) });
       tl.fromTo(flashRef.current, { opacity: 0, scale: 0.5 }, { opacity: 0.9, scale: 1.1, duration: 0.25, ease: "power2.out" })
         .to(flashRef.current, { opacity: 0, scale: 1.35, duration: 0.5, ease: "power2.in" });
       tl.from(cardRef.current, { y: 40, scale: 0.85, opacity: 0, duration: 0.6, ease: "back.out(1.6)", clearProps: "transform,opacity" }, 0.05);
@@ -110,6 +112,7 @@ export function Spotlight({ playerId, onClose, onSwitch, onEdit }: { playerId: s
           <div className="flex flex-wrap items-center gap-2">
             <span className="rk-chip" style={{ color: tier.c, borderColor: tier.c }}>{tier.custom ? t.special : tier.name}</span>
             <TrendBadge delta={getPlayerTrend(player)} size="editor" />
+            <CardExportButton key={player.id} cardRef={cardRef} name={player.name} disabled={reveal && exportReadyId !== playerId} />
             {onEdit && <button type="button" onClick={() => onEdit(player.id)} className={`${pill(true)} ml-auto hover:bg-white`}>{t.edit}</button>}
             {player.special && player.specialText && <span className="text-xs font-bold text-amber-200">✦ {player.specialText}</span>}
           </div>

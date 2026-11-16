@@ -5,7 +5,7 @@ import { strings, useT } from "./i18n";
 
 type ApiHero = { name: string; player_selectable?: boolean; images?: { icon_hero_card_webp?: string; icon_image_small_webp?: string } };
 
-export type Me = { name: string; image: string | null; admin: boolean } | null;
+export type Me = { id: string; handle: string | null; providers: string[]; name: string; image: string | null; admin: boolean } | null;
 
 type Ctx = AppData & {
   heroNames: string[];

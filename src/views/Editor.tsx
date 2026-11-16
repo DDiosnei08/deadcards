@@ -7,6 +7,7 @@ import type { BgSettings, Player, Stats, Team, TierBand } from "../lib/types";
 import { Card } from "../components/Card";
 import { TeamLogo } from "../components/TeamLogo";
 import { HoldButton } from "../components/HoldButton";
+import { Range } from "../components/Range";
 
 const POSITIONS = ["Carry", "OffCarry", "Frontline", "Flex", "Suporte"];
 const SECTIONS = [
@@ -31,15 +32,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     <label className="block space-y-1.5">
       <span className="text-[11px] font-bold tracking-[0.18em] text-zinc-400 uppercase">{label}</span>
       {children}
-    </label>
-  );
-}
-
-function Range({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
-  return (
-    <label className="block">
-      <span className="flex justify-between text-[11px] font-bold tracking-[0.18em] text-zinc-400 uppercase"><span>{label}</span><span className="text-zinc-100 tabular-nums">{value}</span></span>
-      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-zinc-100" />
     </label>
   );
 }

@@ -2,7 +2,8 @@ import { motion } from "motion/react";
 import { useEffect } from "react";
 import { useData } from "../lib/data";
 import { strings, useT } from "../lib/i18n";
-import { TwitchIcon, signInWithGoogle, signInWithTwitch } from "../components/Account";
+import { TwitchIcon } from "../components/Account";
+import { signInWithGoogle, signInWithTwitch } from "../lib/authClient";
 
 const S = strings({
   pt: { twitch: "Entrar com Twitch", google: "Entrar com Google" },
